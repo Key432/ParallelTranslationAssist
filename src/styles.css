@@ -159,6 +159,13 @@ h1 { font-family: 'Libre Caslon Text', 'Noto Serif JP', serif; font-size: clamp(
 
 footer { border-top: 1px solid var(--line); margin-top: auto; padding: 25px clamp(20px, 4vw, 64px); display: flex; justify-content: space-between; color: #99998f; font-size: 9px; letter-spacing: .12em; }
 .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--ink); color: white; padding: 12px 18px; font-size: 12px; border-radius: 3px; box-shadow: 0 8px 30px #0002; z-index: 20; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: #24282473; backdrop-filter: blur(3px); }
+.confirmation-modal { width: min(440px, 100%); background: var(--paper); border: 1px solid var(--line); padding: 32px; box-shadow: 0 24px 70px #15181438; }
+.confirmation-modal h2 { margin: 0; font: 400 23px/1.5 'Noto Serif JP', serif; }
+.confirmation-modal > p:not(.eyebrow) { margin: 16px 0 28px; color: var(--muted); font-size: 12px; line-height: 1.9; }
+.modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 22px; }
+.primary.danger-action { background: var(--accent); }
+.primary.danger-action:hover { background: #b94d31; }
 
 @media (max-width: 800px) {
   .topbar { grid-template-columns: 1fr auto; }

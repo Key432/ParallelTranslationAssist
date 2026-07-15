@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AppHeader } from './components/AppHeader'
+import { ConfirmationModal } from './components/ConfirmationModal'
 import { EmptyProjects } from './components/EmptyProjects'
 import { ProjectSidebar } from './components/ProjectSidebar'
 import { Reader } from './components/Reader'
 import { TranslationWorkspace } from './components/TranslationWorkspace'
-import { overlapsTranslation, sortTranslations, updateTranslationText } from './domain/translations'
+import { findExactTranslation, findOverlappingTranslations, overlapsTranslation, sortTranslations, updateTranslationText } from './domain/translations'
 import { useWorkspace } from './hooks/useWorkspace'
 import { useOutsideClick } from './hooks/useOutsideClick'
 import type { Project, Selection, ViewMode } from './types'
+
+type PendingDiscard = {
+  selection: Selection
+  translationIds: string[]
+}
 
 function App() {
   const workspace = useWorkspace()
@@ -15,6 +21,7 @@ function App() {
   const [selection, setSelection] = useState<Selection | null>(null)
   const [draft, setDraft] = useState('')
   const [editingTranslationId, setEditingTranslationId] = useState<string | null>(null)
+  const [pendingDiscard, setPendingDiscard] = useState<PendingDiscard | null>(null)
   const [view, setView] = useState<ViewMode>('edit')
   const [notice, setNotice] = useState('')
   const [creating, setCreating] = useState(false)
@@ -33,6 +40,7 @@ function App() {
     setSelection(null)
     setDraft('')
     setEditingTranslationId(null)
+    setPendingDiscard(null)
   }, [workspace.activeProjectId])
 
   useEffect(() => {
@@ -75,13 +83,42 @@ function App() {
       setNotice('訳したい原文を先に選択してください')
       return
     }
-    if (overlapsTranslation(start, end, translations)) {
+    const nextSelection = { start, end, text }
+    if (!editingTranslationId) {
+      const exactTranslation = findExactTranslation(start, end, translations)
+      if (exactTranslation) {
+        editTranslation(exactTranslation.id)
+        setNotice('登録済みの訳文を編集します')
+        return
+      }
+
+      const overlapping = findOverlappingTranslations(start, end, translations)
+      if (overlapping.length > 0) {
+        setPendingDiscard({ selection: nextSelection, translationIds: overlapping.map((translation) => translation.id) })
+        return
+      }
+    } else if (overlapsTranslation(start, end, translations)) {
       setNotice('すでに訳文がある範囲と重なっています')
       return
     }
-    setSelection({ start, end, text })
+    setSelection(nextSelection)
     setDraft('')
     setEditingTranslationId(null)
+    window.setTimeout(() => translationRef.current?.focus(), 0)
+  }
+
+  const confirmDiscard = () => {
+    if (!pendingDiscard) return
+    const discardedIds = new Set(pendingDiscard.translationIds)
+    workspace.updateActiveProject((project) => ({
+      ...project,
+      translations: project.translations.filter((translation) => !discardedIds.has(translation.id)),
+    }))
+    setSelection(pendingDiscard.selection)
+    setDraft('')
+    setEditingTranslationId(null)
+    setPendingDiscard(null)
+    setNotice('重なっていた対訳を破棄しました')
     window.setTimeout(() => translationRef.current?.focus(), 0)
   }
 
@@ -195,6 +232,13 @@ function App() {
         </main>
       </div>
       <footer><span>PARALLEL TRANSLATION ASSIST</span><span>Private workspace · Data stays in this browser</span></footer>
+      {pendingDiscard && (
+        <ConfirmationModal
+          count={pendingDiscard.translationIds.length}
+          onCancel={() => setPendingDiscard(null)}
+          onConfirm={confirmDiscard}
+        />
+      )}
       {notice && <div className="toast" role="status">{notice}</div>}
     </div>
   )

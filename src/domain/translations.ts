@@ -18,7 +18,15 @@ export function sortTranslations(translations: Translation[]): Translation[] {
 }
 
 export function overlapsTranslation(start: number, end: number, translations: Translation[]): boolean {
-  return translations.some((item) => start < item.end && end > item.start)
+  return findOverlappingTranslations(start, end, translations).length > 0
+}
+
+export function findExactTranslation(start: number, end: number, translations: Translation[]): Translation | undefined {
+  return translations.find((translation) => translation.start === start && translation.end === end)
+}
+
+export function findOverlappingTranslations(start: number, end: number, translations: Translation[]): Translation[] {
+  return translations.filter((translation) => start < translation.end && end > translation.start)
 }
 
 export function updateTranslationText(translations: Translation[], id: string, translated: string): Translation[] {

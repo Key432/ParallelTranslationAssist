@@ -1,4 +1,4 @@
-import { buildReaderRows, buildSourceSegments, overlapsTranslation, sortTranslations, updateTranslationText } from './translations'
+import { buildReaderRows, buildSourceSegments, findExactTranslation, findOverlappingTranslations, overlapsTranslation, sortTranslations, updateTranslationText } from './translations'
 import type { Translation } from '../types'
 
 const translations: Translation[] = [
@@ -20,6 +20,12 @@ describe('translation domain', () => {
     [19, 22, false],
   ])('detects overlap for range %i-%i', (start, end, expected) => {
     expect(overlapsTranslation(start, end, translations)).toBe(expected)
+  })
+
+  test('distinguishes an exact match from partial overlaps', () => {
+    expect(findExactTranslation(0, 5, translations)?.id).toBe('first')
+    expect(findExactTranslation(0, 6, translations)).toBeUndefined()
+    expect(findOverlappingTranslations(0, 14, translations).map((item) => item.id)).toEqual(['second', 'first'])
   })
 
   test('builds translated and untranslated reader rows in source order', () => {
