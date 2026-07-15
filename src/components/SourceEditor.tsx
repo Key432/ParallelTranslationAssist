@@ -7,9 +7,10 @@ type Props = {
   translations: Translation[]
   sourceRef: RefObject<HTMLTextAreaElement | null>
   onSourceChange: (source: string) => void
+  onBlur?: () => void
 }
 
-export function SourceEditor({ source, translations, sourceRef, onSourceChange }: Props) {
+export function SourceEditor({ source, translations, sourceRef, onSourceChange, onBlur }: Props) {
   const highlightRef = useRef<HTMLDivElement>(null)
   const segments = useMemo(() => buildSourceSegments(source, translations), [source, translations])
 
@@ -34,6 +35,7 @@ export function SourceEditor({ source, translations, sourceRef, onSourceChange }
         value={source}
         onChange={(event) => onSourceChange(event.target.value)}
         onScroll={syncScroll}
+        onBlur={onBlur}
         placeholder="翻訳したい英文をここに貼り付けます…"
         aria-label="翻訳する原文"
         spellCheck

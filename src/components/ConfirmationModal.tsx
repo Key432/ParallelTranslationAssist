@@ -1,13 +1,15 @@
 import { useEffect, useRef } from 'react'
 
 type Props = {
-  count: number
+  count?: number
+  title?: string
+  description?: string
   onCancel: () => void
   onConfirm: () => void
   onKeep: () => void
 }
 
-export function ConfirmationModal({ count, onCancel, onConfirm, onKeep }: Props) {
+export function ConfirmationModal({ count = 1, title, description, onCancel, onConfirm, onKeep }: Props) {
   const confirmRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -23,9 +25,9 @@ export function ConfirmationModal({ count, onCancel, onConfirm, onKeep }: Props)
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.currentTarget === event.target) onCancel() }}>
       <section className="confirmation-modal" role="alertdialog" aria-modal="true" aria-labelledby="discard-dialog-title" aria-describedby="discard-dialog-description">
         <p className="eyebrow">OVERLAPPING TRANSLATION</p>
-        <h2 id="discard-dialog-title">登録済みの対訳を破棄しますか？</h2>
+        <h2 id="discard-dialog-title">{title ?? '登録済みの対訳を破棄しますか？'}</h2>
         <p id="discard-dialog-description">
-          選択範囲は登録済みの対訳{count > 1 ? `${count}件` : ''}と重なっています。続けると、重なっている対訳は削除されます。
+          {description ?? `選択範囲は登録済みの対訳${count > 1 ? `${count}件` : ''}と重なっています。続けると、重なっている対訳は削除されます。`}
         </p>
         <div className="modal-actions">
           <button className="text-button" onClick={onCancel}>キャンセル</button>

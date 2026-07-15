@@ -14,6 +14,7 @@ type Props = {
   sourceRef: RefObject<HTMLTextAreaElement | null>
   translationRef: RefObject<HTMLTextAreaElement | null>
   onSourceChange: (source: string) => void
+  onSourceBlur?: () => void
   onStatusChange: (status: ProjectStatus) => void
   onCaptureSelection: () => void
   onDraftChange: (draft: string) => void
@@ -34,6 +35,7 @@ export function TranslationWorkspace({
   sourceRef,
   translationRef,
   onSourceChange,
+  onSourceBlur,
   onStatusChange,
   onCaptureSelection,
   onDraftChange,
@@ -64,7 +66,7 @@ export function TranslationWorkspace({
             <div><span className="step">01</span><h2>原文</h2><span className="lang">ENGLISH</span></div>
             <span className="count">{source.length.toLocaleString()} 字</span>
           </div>
-          <SourceEditor source={source} translations={translations} sourceRef={sourceRef} onSourceChange={onSourceChange} />
+          <SourceEditor source={source} translations={translations} sourceRef={sourceRef} onSourceChange={onSourceChange} onBlur={onSourceBlur} />
           <div className="panel-footer">
             <span>選択範囲は訳文と一対一で登録されます</span>
             <button className="primary" onClick={onCaptureSelection}>選択範囲を翻訳 <span>→</span></button>

@@ -142,4 +142,70 @@ describe('App translation editing', () => {
     const remainingEditButton = screen.getByRole('button', { name: 'この対訳を編集' })
     expect(remainingEditButton.closest('.pair-card')).toHaveTextContent('Hello world')
   })
+
+  test('updates source outside translations without confirmation and preserves translated ranges', () => {
+    render(<App />)
+    const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' })
+
+    fireEvent.change(sourceText, { target: { value: 'XHello world' } })
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(sourceText).toHaveValue('XHello world')
+    expect(screen.getByRole('button', { name: 'この対訳を編集' }).closest('.pair-card')).toHaveTextContent('Hello')
+  })
+
+  test('cancels a source update that would split a registered translation', () => {
+    render(<App />)
+    const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' })
+    fireEvent.change(sourceText, { target: { value: 'Hallo world' } })
+
+    const dialog = screen.getByRole('alertdialog')
+    expect(within(dialog).getByRole('heading', { name: '原文の更新により対訳が分断されます' })).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'キャンセル' }))
+
+    expect(sourceText).toHaveValue('Hello world')
+    expect(screen.getByRole('button', { name: 'この対訳を編集' })).toBeInTheDocument()
+  })
+
+  test('discards only split translations while preserving unaffected translations', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      projects: [{
+        id: 'project-1', title: 'Project', status: '翻訳中', source: 'Hello world',
+        translations: [
+          { id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
+          { id: 'translation-2', start: 6, end: 11, source: 'world', translated: '世界' },
+        ],
+      }],
+      activeProjectId: 'project-1',
+    }))
+    render(<App />)
+    const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' })
+    fireEvent.change(sourceText, { target: { value: 'Hallo world' } })
+
+    const dialog = screen.getByRole('alertdialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: '破棄して続ける' }))
+
+    expect(sourceText).toHaveValue('Hallo world')
+    const remainingCard = screen.getByRole('button', { name: 'この対訳を編集' }).closest('.pair-card')
+    expect(remainingCard).toHaveTextContent('world')
+    expect(remainingCard).toHaveTextContent('世界')
+  })
+
+  test('keeps translation text while updating its registered source', () => {
+    render(<App />)
+    const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' })
+    fireEvent.change(sourceText, { target: { value: 'Hallo world' } })
+
+    const dialog = screen.getByRole('alertdialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: '訳文を保持' }))
+
+    expect(sourceText).toHaveValue('Hallo world')
+    const keptCard = screen.getByRole('button', { name: 'この対訳を編集' }).closest('.pair-card')
+    expect(keptCard).toHaveTextContent('Hallo')
+    expect(keptCard).toHaveTextContent('こんにちは')
+
+    fireEvent.change(sourceText, { target: { value: 'Hullo world' } })
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(keptCard).toHaveTextContent('Hullo')
+  })
 })
