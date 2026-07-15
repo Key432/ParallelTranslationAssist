@@ -109,6 +109,53 @@
   - 1行目にプロジェクトタイトル、その後に原文と訳文の組を空行区切りで並べた`.txt`ファイルを保存します。
   - 対訳が未登録の原文部分も出力し、訳文には`—`を表示します。
 
+### `.pta.json`プロジェクトファイル形式
+
+プロジェクトファイルはUTF-8のJSONです。現在の形式バージョンは`1`で、次の構造を使用します。
+
+```json
+{
+  "format": "parallel-translation-assist",
+  "version": 1,
+  "exportedAt": "2026-07-16T12:34:56.789Z",
+  "project": {
+    "id": "project-1",
+    "title": "Alice / Chapter 1",
+    "status": "翻訳中",
+    "source": "Alice was beginning to get very tired.",
+    "translations": [
+      {
+        "id": "translation-1",
+        "start": 0,
+        "end": 38,
+        "source": "Alice was beginning to get very tired.",
+        "translated": "アリスはとても退屈しはじめていました。"
+      }
+    ]
+  }
+}
+```
+
+| フィールド | 内容 |
+| --- | --- |
+| `format` | ファイル種別を識別する固定値`parallel-translation-assist` |
+| `version` | ファイル形式のバージョン。現在は`1` |
+| `exportedAt` | エクスポート日時を表すISO 8601形式の文字列 |
+| `project.id` | エクスポート元のプロジェクトID。インポート時は現在選択中のプロジェクトIDを維持します |
+| `project.title` | プロジェクトタイトル |
+| `project.status` | `未着手`、`翻訳中`、`初稿完了`、`修正中`、`完了`、`保留`のいずれか |
+| `project.source` | 原文全体 |
+| `project.translations` | 登録済み対訳の配列 |
+| `project.translations[].id` | 対訳を識別するID |
+| `project.translations[].start` | 原文全体における対訳範囲の開始位置（開始位置を含む） |
+| `project.translations[].end` | 原文全体における対訳範囲の終了位置（終了位置を含まない） |
+| `project.translations[].source` | 対訳として登録した原文 |
+| `project.translations[].translated` | 登録した訳文 |
+
+`start`と`end`はJavaScript文字列のインデックス（UTF-16コード単位）です。通常は`project.source.slice(start, end)`が対訳の`source`に対応します。
+
+インポート時は`format`と`version`が現在の値に一致し、プロジェクトの必須フィールドの型、ステータス、対訳範囲が有効なファイルだけを受け付けます。未対応バージョンは読み込まず、エラーを表示します。将来、互換性を壊す形式変更を行う場合は`version`を更新し、旧バージョンの移行処理を実装するか、未対応として明示的に拒否します。
+
 ## 開発
 
 ```sh
