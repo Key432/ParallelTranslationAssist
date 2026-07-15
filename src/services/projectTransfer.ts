@@ -1,5 +1,5 @@
 import { isProjectStatus } from '../domain/projects'
-import { sortTranslations } from '../domain/translations'
+import { buildReaderRows, sortTranslations } from '../domain/translations'
 import type { Project, Translation } from '../types'
 
 export const PROJECT_FILE_FORMAT = 'parallel-translation-assist'
@@ -64,12 +64,12 @@ export function parseProjectFile(contents: string): Project {
 
 export function buildTranslationsText(project: Project): string {
   const translations = sortTranslations(project.translations).map((translation) => translation.translated)
-  return [project.title, ...translations].join('\n')
+  return [project.title, translations.join('\n')].join('\n\n')
 }
 
 export function buildParallelText(project: Project): string {
-  const pairs = sortTranslations(project.translations)
-    .map((translation) => `${translation.source}\n${translation.translated}`)
+  const pairs = buildReaderRows(project.source, project.translations)
+    .map((row) => `${row.source}\n${row.translated}`)
   return [project.title, ...pairs].join('\n\n')
 }
 

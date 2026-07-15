@@ -38,8 +38,8 @@ export function ProjectTransferControls({ actions, disabled }: Props) {
         <button className="header-action" disabled={disabled} aria-expanded={openMenu === 'import'} onClick={() => setOpenMenu((menu) => menu === 'import' ? null : 'import')}>インポート</button>
         {openMenu === 'import' && (
           <div className="transfer-popover" role="menu" aria-label="インポートメニュー">
-            <button role="menuitem" onClick={() => sourceInputRef.current?.click()}>原文をインポート</button>
             <button role="menuitem" onClick={() => projectInputRef.current?.click()}>プロジェクトをインポート</button>
+            <button role="menuitem" onClick={() => sourceInputRef.current?.click()}>原文をインポート</button>
           </div>
         )}
       </div>

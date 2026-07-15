@@ -12,6 +12,16 @@ function createActions(): jest.Mocked<TransferActions> {
 }
 
 describe('ProjectTransferControls', () => {
+  test('shows project import before source import', () => {
+    render(<ProjectTransferControls actions={createActions()} disabled={false} />)
+    fireEvent.click(screen.getByRole('button', { name: 'インポート' }))
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'プロジェクトをインポート',
+      '原文をインポート',
+    ])
+  })
+
   test('reads supported source and project files', async () => {
     const actions = createActions()
     render(<ProjectTransferControls actions={actions} disabled={false} />)

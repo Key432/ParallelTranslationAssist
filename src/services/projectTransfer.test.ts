@@ -23,11 +23,11 @@ describe('project transfer', () => {
   })
 
   test('exports translated text in source order', () => {
-    expect(buildTranslationsText(project)).toBe('Alice / Chapter 1\nこんにちは\n世界')
+    expect(buildTranslationsText(project)).toBe('Alice / Chapter 1\n\nこんにちは\n世界')
   })
 
-  test('exports bilingual pairs separated by blank lines', () => {
-    expect(buildParallelText(project)).toBe('Alice / Chapter 1\n\nHello\nこんにちは\n\nworld\n世界')
+  test('exports bilingual pairs and marks untranslated source', () => {
+    expect(buildParallelText(project)).toBe('Alice / Chapter 1\n\nHello\nこんにちは\n\ngap\n—\n\nworld\n世界')
   })
 
   test('sanitizes project titles for downloaded file names', () => {
