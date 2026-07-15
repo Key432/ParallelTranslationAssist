@@ -5,7 +5,7 @@ import { EmptyProjects } from './components/EmptyProjects'
 import { ProjectSidebar } from './components/ProjectSidebar'
 import { Reader } from './components/Reader'
 import { TranslationWorkspace } from './components/TranslationWorkspace'
-import { findExactTranslation, findOverlappingTranslations, sortTranslations, updateTranslationText } from './domain/translations'
+import { findExactTranslation, findOverlappingTranslations, mergeTranslationTexts, sortTranslations, updateTranslationText } from './domain/translations'
 import { useWorkspace } from './hooks/useWorkspace'
 import { useOutsideClick } from './hooks/useOutsideClick'
 import type { Project, Selection, ViewMode } from './types'
@@ -146,6 +146,36 @@ function App() {
     window.setTimeout(() => translationRef.current?.focus(), 0)
   }
 
+  const keepOverlappingTranslations = () => {
+    if (!pendingDiscard) return
+    const mergedIds = new Set(pendingDiscard.translationIds)
+    if (pendingDiscard.editingTranslationId) mergedIds.add(pendingDiscard.editingTranslationId)
+    const mergedText = mergeTranslationTexts(translations.filter((translation) => mergedIds.has(translation.id)))
+
+    if (pendingDiscard.mode === 'update-editing' && pendingDiscard.editingTranslationId) {
+      setDraft(mergedText)
+      updateEditingSourceSelection(
+        pendingDiscard.selection,
+        pendingDiscard.editingTranslationId,
+        pendingDiscard.translationIds,
+      )
+      setNotice('訳文を結合し、原文範囲を更新しました')
+      return
+    }
+
+    const discardedIds = new Set(pendingDiscard.translationIds)
+    workspace.updateActiveProject((project) => ({
+      ...project,
+      translations: project.translations.filter((translation) => !discardedIds.has(translation.id)),
+    }))
+    setSelection(pendingDiscard.selection)
+    setDraft(mergedText)
+    setEditingTranslationId(null)
+    setPendingDiscard(null)
+    setNotice('登録済みの訳文を結合しました')
+    window.setTimeout(() => translationRef.current?.focus(), 0)
+  }
+
   const updateEditingSourceSelection = (nextSelection: Selection, editingId: string, discardIds: string[] = []) => {
     const discardedIds = new Set(discardIds)
     workspace.updateActiveProject((project) => ({
@@ -277,6 +307,7 @@ function App() {
           count={pendingDiscard.translationIds.length}
           onCancel={() => setPendingDiscard(null)}
           onConfirm={confirmDiscard}
+          onKeep={keepOverlappingTranslations}
         />
       )}
       {notice && <div className="toast" role="status">{notice}</div>}

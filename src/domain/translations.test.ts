@@ -1,4 +1,4 @@
-import { buildReaderRows, buildSourceSegments, findExactTranslation, findOverlappingTranslations, overlapsTranslation, sortTranslations, updateTranslationText } from './translations'
+import { buildReaderRows, buildSourceSegments, findExactTranslation, findOverlappingTranslations, mergeTranslationTexts, overlapsTranslation, sortTranslations, updateTranslationText } from './translations'
 import type { Translation } from '../types'
 
 const translations: Translation[] = [
@@ -52,5 +52,9 @@ describe('translation domain', () => {
     const updated = updateTranslationText(translations, 'first', '更新した訳文')
     expect(updated.find((item) => item.id === 'first')).toEqual({ ...translations[1], translated: '更新した訳文' })
     expect(updated.find((item) => item.id === 'second')).toBe(translations[0])
+  })
+
+  test('merges translation texts in source order with paragraph breaks', () => {
+    expect(mergeTranslationTexts(translations)).toBe('最初\n\n二番目')
   })
 })

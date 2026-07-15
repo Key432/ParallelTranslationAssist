@@ -33,6 +33,13 @@ export function updateTranslationText(translations: Translation[], id: string, t
   return translations.map((translation) => translation.id === id ? { ...translation, translated } : translation)
 }
 
+export function mergeTranslationTexts(translations: Translation[]): string {
+  return sortTranslations(translations)
+    .map((translation) => translation.translated.trim())
+    .filter(Boolean)
+    .join('\n\n')
+}
+
 export function buildSourceSegments(source: string, translations: Translation[]): SourceSegment[] {
   const segments: SourceSegment[] = []
   let cursor = 0

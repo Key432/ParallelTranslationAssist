@@ -60,6 +60,28 @@ describe('App translation editing', () => {
     expect(screen.getByRole('textbox', { name: '訳文' })).toHaveValue('')
   })
 
+  test('keeps and merges registered translation text for a new overlapping range', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      projects: [{
+        id: 'project-1', title: 'Project', status: '翻訳中', source: 'Hello world',
+        translations: [
+          { id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
+          { id: 'translation-2', start: 6, end: 11, source: 'world', translated: '世界' },
+        ],
+      }],
+      activeProjectId: 'project-1',
+    }))
+    render(<App />)
+    const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' }) as HTMLTextAreaElement
+    sourceText.setSelectionRange(0, 11)
+
+    fireEvent.click(screen.getByRole('button', { name: /選択範囲を翻訳/ }))
+    fireEvent.click(screen.getByRole('button', { name: '訳文を保持' }))
+
+    expect(screen.getByRole('textbox', { name: '訳文' })).toHaveValue('こんにちは\n\n世界')
+    expect(screen.queryByRole('button', { name: 'この対訳を編集' })).not.toBeInTheDocument()
+  })
+
   test('updates the source range in edit mode and discards another overlapping translation after confirmation', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       projects: [{
@@ -95,5 +117,29 @@ describe('App translation editing', () => {
     expect(remainingEditButton.closest('.pair-card')).toHaveTextContent('こんにちは')
     expect(screen.queryByText('世界')).not.toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: '訳文' })).toHaveValue('こんにちは')
+  })
+
+  test('merges other registered text into the current translation while editing', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      projects: [{
+        id: 'project-1', title: 'Project', status: '翻訳中', source: 'Hello world',
+        translations: [
+          { id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
+          { id: 'translation-2', start: 6, end: 11, source: 'world', translated: '世界' },
+        ],
+      }],
+      activeProjectId: 'project-1',
+    }))
+    render(<App />)
+    fireEvent.click(screen.getAllByRole('button', { name: 'この対訳を編集' })[0])
+    const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' }) as HTMLTextAreaElement
+    sourceText.setSelectionRange(0, 11)
+
+    fireEvent.click(screen.getByRole('button', { name: /選択範囲を翻訳/ }))
+    fireEvent.click(screen.getByRole('button', { name: '訳文を保持' }))
+
+    expect(screen.getByRole('textbox', { name: '訳文' })).toHaveValue('こんにちは\n\n世界')
+    const remainingEditButton = screen.getByRole('button', { name: 'この対訳を編集' })
+    expect(remainingEditButton.closest('.pair-card')).toHaveTextContent('Hello world')
   })
 })

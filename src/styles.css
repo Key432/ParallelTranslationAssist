@@ -163,9 +163,11 @@ footer { border-top: 1px solid var(--line); margin-top: auto; padding: 25px clam
 .confirmation-modal { width: min(440px, 100%); background: var(--paper); border: 1px solid var(--line); padding: 32px; box-shadow: 0 24px 70px #15181438; }
 .confirmation-modal h2 { margin: 0; font: 400 23px/1.5 'Noto Serif JP', serif; }
 .confirmation-modal > p:not(.eyebrow) { margin: 16px 0 28px; color: var(--muted); font-size: 12px; line-height: 1.9; }
-.modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 22px; }
+.modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
 .primary.danger-action { background: var(--accent); }
 .primary.danger-action:hover { background: #b94d31; }
+.primary.keep-action { background: var(--green); }
+.primary.keep-action:hover { background: #324a3f; }
 
 @media (max-width: 800px) {
   .topbar { grid-template-columns: 1fr auto; }
