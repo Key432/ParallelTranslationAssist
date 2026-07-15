@@ -26,7 +26,7 @@ export function SourceEditor({ source, translations, sourceRef, onSourceChange }
           {segments.map((segment) => (
             <span className={segment.translated ? 'translated-source' : undefined} key={segment.id}>{segment.text}</span>
           ))}
-          {'\n'}
+          {source.endsWith('\n') ? '\n' : null}
         </div>
       </div>
       <textarea

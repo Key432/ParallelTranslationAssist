@@ -26,4 +26,28 @@ describe('SourceEditor', () => {
     )
     expect(container.querySelector('.translated-source')).not.toBeInTheDocument()
   })
+
+  test('mirrors a trailing newline with one extra newline for caret alignment', () => {
+    const { container, rerender } = render(
+      <SourceEditor
+        source={'Hello\n'}
+        translations={[]}
+        sourceRef={createRef<HTMLTextAreaElement>()}
+        onSourceChange={jest.fn()}
+      />,
+    )
+
+    expect(container.querySelector('.source-highlight-content')).toHaveTextContent('Hello', { normalizeWhitespace: false })
+    expect(container.querySelector('.source-highlight-content')?.textContent).toBe('Hello\n\n')
+
+    rerender(
+      <SourceEditor
+        source="Hello"
+        translations={[]}
+        sourceRef={createRef<HTMLTextAreaElement>()}
+        onSourceChange={jest.fn()}
+      />,
+    )
+    expect(container.querySelector('.source-highlight-content')?.textContent).toBe('Hello')
+  })
 })
