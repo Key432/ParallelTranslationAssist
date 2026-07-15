@@ -160,7 +160,7 @@ describe('App translation editing', () => {
     fireEvent.change(sourceText, { target: { value: 'Hallo world' } })
 
     const dialog = screen.getByRole('alertdialog')
-    expect(within(dialog).getByRole('heading', { name: '原文の更新により対訳が分断されます' })).toBeInTheDocument()
+    expect(within(dialog).getByRole('heading', { name: 'この原文の更新は登録済みの対訳に影響します' })).toBeInTheDocument()
     fireEvent.click(within(dialog).getByRole('button', { name: 'キャンセル' }))
 
     expect(sourceText).toHaveValue('Hello world')

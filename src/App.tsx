@@ -361,7 +361,7 @@ function App() {
       {pendingSourceUpdate && (
         <ConfirmationModal
           count={pendingSourceUpdate.affectedIds.length}
-          title="原文の更新により対訳が分断されます"
+          title="この原文の更新は登録済みの対訳に影響します"
           description={`この変更は登録済みの対訳${pendingSourceUpdate.affectedIds.length > 1 ? `${pendingSourceUpdate.affectedIds.length}件` : ''}の原文範囲に影響します。どのように更新するか選択してください。`}
           onCancel={cancelSourceUpdate}
           onConfirm={() => confirmSourceUpdate('discard')}
