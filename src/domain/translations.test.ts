@@ -1,4 +1,4 @@
-import { buildReaderRows, overlapsTranslation, sortTranslations } from './translations'
+import { buildReaderRows, buildSourceSegments, overlapsTranslation, sortTranslations } from './translations'
 import type { Translation } from '../types'
 
 const translations: Translation[] = [
@@ -29,6 +29,16 @@ describe('translation domain', () => {
       ['gap123', false],
       ['Second', true],
       ['tail', false],
+    ])
+  })
+
+  test('builds source segments that mark registered translation ranges', () => {
+    const segments = buildSourceSegments('First gap123 Second tail', translations)
+    expect(segments.map(({ text, translated }) => [text, translated])).toEqual([
+      ['First', true],
+      [' gap123 ', false],
+      ['Second', true],
+      [' tail', false],
     ])
   })
 })

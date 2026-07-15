@@ -101,9 +101,16 @@ h1 { font-family: 'Libre Caslon Text', 'Noto Serif JP', serif; font-size: clamp(
 .step { font: 11px 'Libre Caslon Text', serif; color: var(--accent); margin-right: 2px; }
 .lang, .count { font-size: 9px; letter-spacing: .15em; color: #9a9a91; }
 .lang { border-left: 1px solid var(--line); padding-left: 10px; }
-.panel > textarea, .translation-form > textarea { resize: none; width: 100%; border: 0; outline: 0; background: transparent; padding: 34px; color: var(--ink); line-height: 1.85; }
-.source-panel > textarea { font: 17px/1.9 'Libre Caslon Text', serif; }
-.panel > textarea::selection { background: #e4c3ac; color: var(--ink); }
+.translation-form > textarea { resize: none; width: 100%; border: 0; outline: 0; background: transparent; padding: 34px; color: var(--ink); line-height: 1.85; }
+.source-editor { position: relative; min-height: 0; overflow: hidden; }
+.source-editor textarea, .source-highlight { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; border: 0; padding: 34px; overflow: auto; white-space: pre-wrap; overflow-wrap: break-word; font: 17px/1.9 'Libre Caslon Text', serif; letter-spacing: normal; }
+.source-highlight { pointer-events: none; color: var(--ink); scrollbar-width: none; }
+.source-highlight::-webkit-scrollbar { display: none; }
+.source-highlight-content { min-height: 100%; }
+.translated-source { color: #d7835e; }
+.source-editor textarea { resize: none; outline: 0; background: transparent; color: transparent; caret-color: var(--ink); -webkit-text-fill-color: transparent; }
+.source-editor textarea::placeholder { color: #8e8e86; -webkit-text-fill-color: #8e8e86; }
+.source-editor textarea::selection { background: #e4c3ac; color: transparent; -webkit-text-fill-color: transparent; }
 .panel-footer { min-height: 70px; border-top: 1px solid var(--line); padding: 12px 18px 12px 26px; display: flex; align-items: center; justify-content: space-between; color: #99998f; font-size: 10px; }
 .panel-footer.right { justify-content: flex-end; gap: 12px; }
 .primary { border: 0; background: var(--ink); color: white; border-radius: 3px; padding: 13px 17px; font-size: 12px; font-weight: 500; letter-spacing: .02em; cursor: pointer; display: inline-flex; align-items: center; gap: 20px; transition: transform .15s, background .15s; }
@@ -178,10 +185,11 @@ footer { border-top: 1px solid var(--line); margin-top: auto; padding: 25px clam
   .topbar { display: flex; padding: 0 13px; }
   .brand-area { gap: 11px; }
   .workspace, .reader { width: calc(100% - 20px); }
-  .panel > textarea, .translation-form > textarea { padding: 24px; }
+  .translation-form > textarea { padding: 24px; }
+  .source-editor textarea, .source-highlight { padding: 24px; }
   .panel-header { padding: 0 18px; }
   .editor-grid { min-height: 0; }
-  .source-panel > textarea { min-height: 380px; }
+  .source-editor { min-height: 380px; }
   .reader-label { display: none; }
   .reader-row { padding-top: 28px; }
   .row-number { top: 32px; }

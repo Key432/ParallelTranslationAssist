@@ -7,12 +7,34 @@ export type ReaderRow = {
   translatedRow: boolean
 }
 
+export type SourceSegment = {
+  id: string
+  text: string
+  translated: boolean
+}
+
 export function sortTranslations(translations: Translation[]): Translation[] {
   return [...translations].sort((a, b) => a.start - b.start)
 }
 
 export function overlapsTranslation(start: number, end: number, translations: Translation[]): boolean {
   return translations.some((item) => start < item.end && end > item.start)
+}
+
+export function buildSourceSegments(source: string, translations: Translation[]): SourceSegment[] {
+  const segments: SourceSegment[] = []
+  let cursor = 0
+
+  sortTranslations(translations).forEach((translation) => {
+    const start = Math.max(cursor, Math.min(translation.start, source.length))
+    const end = Math.max(start, Math.min(translation.end, source.length))
+    if (start > cursor) segments.push({ id: `plain-${translation.id}`, text: source.slice(cursor, start), translated: false })
+    if (end > start) segments.push({ id: translation.id, text: source.slice(start, end), translated: true })
+    cursor = end
+  })
+
+  if (cursor < source.length) segments.push({ id: 'plain-last', text: source.slice(cursor), translated: false })
+  return segments
 }
 
 export function buildReaderRows(source: string, translations: Translation[]): ReaderRow[] {

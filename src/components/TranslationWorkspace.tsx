@@ -1,6 +1,7 @@
 import type { RefObject } from 'react'
 import { PROJECT_STATUSES } from '../domain/projects'
 import type { ProjectStatus, Selection, Translation } from '../types'
+import { SourceEditor } from './SourceEditor'
 
 type Props = {
   title: string
@@ -59,14 +60,7 @@ export function TranslationWorkspace({
             <div><span className="step">01</span><h2>原文</h2><span className="lang">ENGLISH</span></div>
             <span className="count">{source.length.toLocaleString()} 字</span>
           </div>
-          <textarea
-            ref={sourceRef}
-            value={source}
-            onChange={(event) => onSourceChange(event.target.value)}
-            placeholder="翻訳したい英文をここに貼り付けます…"
-            aria-label="翻訳する原文"
-            spellCheck
-          />
+          <SourceEditor source={source} translations={translations} sourceRef={sourceRef} onSourceChange={onSourceChange} />
           <div className="panel-footer">
             <span>選択範囲は訳文と一対一で登録されます</span>
             <button className="primary" onClick={onCaptureSelection}>選択範囲を翻訳 <span>→</span></button>
