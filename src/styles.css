@@ -38,7 +38,8 @@ button { color: inherit; }
 
 .app-body { flex: 1; display: flex; align-items: stretch; min-height: 0; }
 main { flex: 1; min-width: 0; }
-.project-sidebar { width: 288px; flex: 0 0 288px; min-height: calc(100vh - 72px); border-right: 1px solid var(--line); background: #ebe7dc; padding: 31px 18px 24px; display: flex; flex-direction: column; position: sticky; top: 72px; height: calc(100vh - 72px); overflow-y: auto; z-index: 20; }
+.project-sidebar { width: 288px; flex: 0 0 288px; min-height: calc(100vh - 72px); border-right: 1px solid var(--line); background: #ebe7dc; padding: 31px 18px 24px; display: flex; flex-direction: column; position: sticky; top: 72px; height: calc(100vh - 72px); overflow-y: auto; z-index: 20; opacity: 1; transform: translateX(0); visibility: visible; transition: width .28s ease, flex-basis .28s ease, padding .28s ease, opacity .2s ease, transform .28s ease, border-color .2s ease, visibility 0s linear 0s; }
+.project-sidebar.closed { width: 0; flex-basis: 0; padding-left: 0; padding-right: 0; border-right-color: transparent; opacity: 0; transform: translateX(-20px); overflow: hidden; pointer-events: none; visibility: hidden; transition: width .28s ease, flex-basis .28s ease, padding .28s ease, opacity .18s ease, transform .28s ease, border-color .2s ease, visibility 0s linear .28s; }
 .sidebar-heading { display: flex; align-items: center; justify-content: space-between; padding: 0 7px 22px; }
 .sidebar-heading .eyebrow { margin-bottom: 6px; }
 .sidebar-heading h2 { margin: 0; font: 400 21px 'Noto Serif JP', serif; }
@@ -145,6 +146,7 @@ footer { border-top: 1px solid var(--line); margin-top: auto; padding: 25px clam
 @media (max-width: 800px) {
   .topbar { grid-template-columns: 1fr auto; }
   .project-sidebar { position: fixed; left: 0; top: 72px; bottom: 0; height: auto; min-height: 0; width: min(310px, calc(100vw - 42px)); flex-basis: auto; box-shadow: 18px 0 45px #272a2530; }
+  .project-sidebar.closed { width: min(310px, calc(100vw - 42px)); transform: translateX(-100%); box-shadow: none; }
   .project-actions { display: flex; }
   .view-switch { order: 3; position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 30; box-shadow: 0 4px 24px #0002; }
   .header-meta > span { display: none; }

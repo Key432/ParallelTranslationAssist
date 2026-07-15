@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, type Ref } from 'react'
 import type { Project } from '../types'
 
 type Props = {
   projects: Project[]
+  open: boolean
+  sidebarRef: Ref<HTMLElement>
   activeProjectId: string | null
   creating: boolean
   onCreatingChange: (creating: boolean) => void
@@ -12,7 +14,7 @@ type Props = {
   onDelete: (project: Project) => void
 }
 
-export function ProjectSidebar({ projects, activeProjectId, creating, onCreatingChange, onSelect, onAdd, onRename, onDelete }: Props) {
+export function ProjectSidebar({ projects, open, sidebarRef, activeProjectId, creating, onCreatingChange, onSelect, onAdd, onRename, onDelete }: Props) {
   const [newTitle, setNewTitle] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
@@ -33,7 +35,13 @@ export function ProjectSidebar({ projects, activeProjectId, creating, onCreating
   }
 
   return (
-    <aside className="project-sidebar" aria-label="プロジェクト管理">
+    <aside
+      ref={sidebarRef}
+      className={`project-sidebar ${open ? 'open' : 'closed'}`}
+      aria-label="プロジェクト管理"
+      aria-hidden={!open}
+      inert={!open}
+    >
       <div className="sidebar-heading">
         <div><p className="eyebrow">YOUR WORKSPACE</p><h2>プロジェクト</h2></div>
         <button className="add-project" onClick={() => onCreatingChange(true)} aria-label="新しいプロジェクトを作成">＋</button>

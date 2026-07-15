@@ -15,6 +15,7 @@ export function AppHeader({ view, hasActiveProject, sidebarOpen, onToggleSidebar
       <div className="brand-area">
         <button
           className="sidebar-toggle"
+          data-sidebar-toggle
           onClick={onToggleSidebar}
           aria-label={sidebarOpen ? 'プロジェクト一覧を閉じる' : 'プロジェクト一覧を開く'}
           aria-expanded={sidebarOpen}

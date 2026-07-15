@@ -7,6 +7,8 @@ describe('ProjectSidebar', () => {
     render(
       <ProjectSidebar
         projects={[]}
+        open
+        sidebarRef={null}
         activeProjectId={null}
         creating
         onCreatingChange={jest.fn()}

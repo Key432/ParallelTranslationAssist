@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AppHeader } from './components/AppHeader'
 import { EmptyProjects } from './components/EmptyProjects'
 import { ProjectSidebar } from './components/ProjectSidebar'
@@ -6,6 +6,7 @@ import { Reader } from './components/Reader'
 import { TranslationWorkspace } from './components/TranslationWorkspace'
 import { overlapsTranslation, sortTranslations } from './domain/translations'
 import { useWorkspace } from './hooks/useWorkspace'
+import { useOutsideClick } from './hooks/useOutsideClick'
 import type { Project, Selection, ViewMode } from './types'
 
 function App() {
@@ -18,10 +19,14 @@ function App() {
   const [creating, setCreating] = useState(false)
   const sourceRef = useRef<HTMLTextAreaElement>(null)
   const translationRef = useRef<HTMLTextAreaElement>(null)
+  const sidebarRef = useRef<HTMLElement>(null)
 
   const source = workspace.activeProject?.source ?? ''
   const translations = workspace.activeProject?.translations ?? []
   const sortedTranslations = useMemo(() => sortTranslations(translations), [translations])
+  const closeSidebar = useCallback(() => setSidebarOpen(false), [])
+
+  useOutsideClick(sidebarRef, closeSidebar, sidebarOpen, '[data-sidebar-toggle]')
 
   useEffect(() => {
     setSelection(null)
@@ -120,18 +125,18 @@ function App() {
         onClear={clearActiveProject}
       />
       <div className="app-body">
-        {sidebarOpen && (
-          <ProjectSidebar
-            projects={workspace.projects}
-            activeProjectId={workspace.activeProjectId}
-            creating={creating}
-            onCreatingChange={setCreating}
-            onSelect={selectProject}
-            onAdd={addProject}
-            onRename={renameProject}
-            onDelete={deleteProject}
-          />
-        )}
+        <ProjectSidebar
+          projects={workspace.projects}
+          open={sidebarOpen}
+          sidebarRef={sidebarRef}
+          activeProjectId={workspace.activeProjectId}
+          creating={creating}
+          onCreatingChange={setCreating}
+          onSelect={selectProject}
+          onAdd={addProject}
+          onRename={renameProject}
+          onDelete={deleteProject}
+        />
         <main id="top">
           {!workspace.activeProject ? (
             <EmptyProjects onCreate={() => { setSidebarOpen(true); setCreating(true) }} />
