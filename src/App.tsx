@@ -5,7 +5,7 @@ import { EmptyProjects } from './components/EmptyProjects'
 import { ProjectSidebar } from './components/ProjectSidebar'
 import { Reader } from './components/Reader'
 import { TranslationWorkspace } from './components/TranslationWorkspace'
-import { findExactTranslation, findOverlappingTranslations, overlapsTranslation, sortTranslations, updateTranslationText } from './domain/translations'
+import { findExactTranslation, findOverlappingTranslations, sortTranslations, updateTranslationText } from './domain/translations'
 import { useWorkspace } from './hooks/useWorkspace'
 import { useOutsideClick } from './hooks/useOutsideClick'
 import type { Project, Selection, ViewMode } from './types'
@@ -13,6 +13,8 @@ import type { Project, Selection, ViewMode } from './types'
 type PendingDiscard = {
   selection: Selection
   translationIds: string[]
+  mode: 'new' | 'update-editing'
+  editingTranslationId?: string
 }
 
 function App() {
@@ -94,11 +96,25 @@ function App() {
 
       const overlapping = findOverlappingTranslations(start, end, translations)
       if (overlapping.length > 0) {
-        setPendingDiscard({ selection: nextSelection, translationIds: overlapping.map((translation) => translation.id) })
+        setPendingDiscard({ selection: nextSelection, translationIds: overlapping.map((translation) => translation.id), mode: 'new' })
         return
       }
-    } else if (overlapsTranslation(start, end, translations)) {
-      setNotice('すでに訳文がある範囲と重なっています')
+    } else {
+      const overlapping = findOverlappingTranslations(
+        start,
+        end,
+        translations.filter((translation) => translation.id !== editingTranslationId),
+      )
+      if (overlapping.length > 0) {
+        setPendingDiscard({
+          selection: nextSelection,
+          translationIds: overlapping.map((translation) => translation.id),
+          mode: 'update-editing',
+          editingTranslationId,
+        })
+        return
+      }
+      updateEditingSourceSelection(nextSelection, editingTranslationId)
       return
     }
     setSelection(nextSelection)
@@ -109,6 +125,14 @@ function App() {
 
   const confirmDiscard = () => {
     if (!pendingDiscard) return
+    if (pendingDiscard.mode === 'update-editing' && pendingDiscard.editingTranslationId) {
+      updateEditingSourceSelection(
+        pendingDiscard.selection,
+        pendingDiscard.editingTranslationId,
+        pendingDiscard.translationIds,
+      )
+      return
+    }
     const discardedIds = new Set(pendingDiscard.translationIds)
     workspace.updateActiveProject((project) => ({
       ...project,
@@ -119,6 +143,22 @@ function App() {
     setEditingTranslationId(null)
     setPendingDiscard(null)
     setNotice('重なっていた対訳を破棄しました')
+    window.setTimeout(() => translationRef.current?.focus(), 0)
+  }
+
+  const updateEditingSourceSelection = (nextSelection: Selection, editingId: string, discardIds: string[] = []) => {
+    const discardedIds = new Set(discardIds)
+    workspace.updateActiveProject((project) => ({
+      ...project,
+      translations: project.translations
+        .filter((translation) => !discardedIds.has(translation.id))
+        .map((translation) => translation.id === editingId
+          ? { ...translation, start: nextSelection.start, end: nextSelection.end, source: nextSelection.text }
+          : translation),
+    }))
+    setSelection(nextSelection)
+    setPendingDiscard(null)
+    setNotice(discardIds.length > 0 ? '重なっていた対訳を破棄し、原文範囲を更新しました' : '対訳の原文範囲を更新しました')
     window.setTimeout(() => translationRef.current?.focus(), 0)
   }
 
