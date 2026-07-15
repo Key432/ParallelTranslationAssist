@@ -133,12 +133,14 @@ h1 { font-family: 'Libre Caslon Text', 'Noto Serif JP', serif; font-size: clamp(
 .section-title { margin-bottom: 22px; }
 .section-title h2 { font: 400 25px 'Noto Serif JP', serif; margin: 0; }
 .pair-list { border-top: 1px solid var(--line); }
-.pair-card { display: grid; grid-template-columns: 45px 1fr 1fr 28px; gap: 28px; align-items: start; padding: 26px 8px; border-bottom: 1px solid var(--line); }
+.pair-card { display: grid; grid-template-columns: 45px 1fr 1fr 58px; gap: 28px; align-items: start; padding: 26px 8px; border-bottom: 1px solid var(--line); transition: background .18s ease; }
+.pair-card.editing { background: #efe9df; }
 .pair-card p { margin: 0; font-size: 14px; line-height: 1.8; }
 .pair-card p[lang='en'] { font-family: 'Libre Caslon Text', serif; }
 .pair-card p[lang='ja'] { font-family: 'Noto Serif JP', serif; }
 .pair-number { font: 10px 'DM Sans'; color: var(--accent); padding-top: 5px; }
-.pair-card button { border: 0; background: transparent; color: #aaa99f; cursor: pointer; font-size: 18px; }
+.pair-actions { display: flex; align-items: center; justify-content: flex-end; }
+.pair-card button { width: 28px; height: 28px; padding: 0; border: 0; background: transparent; color: #aaa99f; cursor: pointer; font-size: 18px; }
 .pair-card button:hover { color: var(--accent); }
 
 .reader-heading { margin-bottom: 46px; }
@@ -172,9 +174,9 @@ footer { border-top: 1px solid var(--line); margin-top: auto; padding: 25px clam
   .panel + .panel { border-left: 0; border-top: 1px solid var(--line); }
   .panel-footer > span { display: none; }
   .panel-footer { justify-content: flex-end; }
-  .pair-card { grid-template-columns: 28px 1fr 24px; gap: 14px; }
+  .pair-card { grid-template-columns: 28px 1fr 58px; gap: 14px; }
   .pair-card p[lang='ja'] { grid-column: 2; }
-  .pair-card button { grid-row: 1; grid-column: 3; }
+  .pair-actions { grid-row: 1; grid-column: 3; }
   .reader-label { padding-left: 0; gap: 25px; }
   .reader-row { grid-template-columns: 1fr; gap: 17px; padding-left: 34px; }
   footer { padding-bottom: 80px; gap: 20px; }

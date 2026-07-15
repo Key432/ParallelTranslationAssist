@@ -9,6 +9,7 @@ type Props = {
   source: string
   translations: Translation[]
   selection: Selection | null
+  editingTranslationId: string | null
   draft: string
   sourceRef: RefObject<HTMLTextAreaElement | null>
   translationRef: RefObject<HTMLTextAreaElement | null>
@@ -18,6 +19,7 @@ type Props = {
   onDraftChange: (draft: string) => void
   onSaveTranslation: () => void
   onCancelSelection: () => void
+  onEditTranslation: (id: string) => void
   onDeleteTranslation: (id: string) => void
 }
 
@@ -27,6 +29,7 @@ export function TranslationWorkspace({
   source,
   translations,
   selection,
+  editingTranslationId,
   draft,
   sourceRef,
   translationRef,
@@ -36,6 +39,7 @@ export function TranslationWorkspace({
   onDraftChange,
   onSaveTranslation,
   onCancelSelection,
+  onEditTranslation,
   onDeleteTranslation,
 }: Props) {
   return (
@@ -74,7 +78,7 @@ export function TranslationWorkspace({
           </div>
           {selection ? (
             <div className="translation-form">
-              <blockquote><span>選択した原文</span>{selection.text}</blockquote>
+              <blockquote><span>{editingTranslationId ? '編集中の原文' : '選択した原文'}</span>{selection.text}</blockquote>
               <textarea
                 ref={translationRef}
                 value={draft}
@@ -105,11 +109,14 @@ export function TranslationWorkspace({
           <div className="section-title"><p className="eyebrow">REGISTERED PAIRS</p><h2>登録済みの対訳</h2></div>
           <div className="pair-list">
             {translations.map((item, index) => (
-              <article className="pair-card" key={item.id}>
+              <article className={`pair-card ${editingTranslationId === item.id ? 'editing' : ''}`} key={item.id}>
                 <span className="pair-number">{String(index + 1).padStart(2, '0')}</span>
                 <p lang="en">{item.source}</p>
                 <p lang="ja">{item.translated}</p>
-                <button aria-label="この対訳を削除" onClick={() => onDeleteTranslation(item.id)}>×</button>
+                <div className="pair-actions">
+                  <button aria-label="この対訳を編集" onClick={() => onEditTranslation(item.id)}>✎</button>
+                  <button aria-label="この対訳を削除" onClick={() => onDeleteTranslation(item.id)}>×</button>
+                </div>
               </article>
             ))}
           </div>

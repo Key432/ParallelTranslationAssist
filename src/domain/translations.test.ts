@@ -1,4 +1,4 @@
-import { buildReaderRows, buildSourceSegments, overlapsTranslation, sortTranslations } from './translations'
+import { buildReaderRows, buildSourceSegments, overlapsTranslation, sortTranslations, updateTranslationText } from './translations'
 import type { Translation } from '../types'
 
 const translations: Translation[] = [
@@ -40,5 +40,11 @@ describe('translation domain', () => {
       ['Second', true],
       [' tail', false],
     ])
+  })
+
+  test('updates only the requested translation text', () => {
+    const updated = updateTranslationText(translations, 'first', '更新した訳文')
+    expect(updated.find((item) => item.id === 'first')).toEqual({ ...translations[1], translated: '更新した訳文' })
+    expect(updated.find((item) => item.id === 'second')).toBe(translations[0])
   })
 })

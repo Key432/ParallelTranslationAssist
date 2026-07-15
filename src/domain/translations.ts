@@ -21,6 +21,10 @@ export function overlapsTranslation(start: number, end: number, translations: Tr
   return translations.some((item) => start < item.end && end > item.start)
 }
 
+export function updateTranslationText(translations: Translation[], id: string, translated: string): Translation[] {
+  return translations.map((translation) => translation.id === id ? { ...translation, translated } : translation)
+}
+
 export function buildSourceSegments(source: string, translations: Translation[]): SourceSegment[] {
   const segments: SourceSegment[] = []
   let cursor = 0

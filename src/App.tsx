@@ -4,7 +4,7 @@ import { EmptyProjects } from './components/EmptyProjects'
 import { ProjectSidebar } from './components/ProjectSidebar'
 import { Reader } from './components/Reader'
 import { TranslationWorkspace } from './components/TranslationWorkspace'
-import { overlapsTranslation, sortTranslations } from './domain/translations'
+import { overlapsTranslation, sortTranslations, updateTranslationText } from './domain/translations'
 import { useWorkspace } from './hooks/useWorkspace'
 import { useOutsideClick } from './hooks/useOutsideClick'
 import type { Project, Selection, ViewMode } from './types'
@@ -14,6 +14,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 800)
   const [selection, setSelection] = useState<Selection | null>(null)
   const [draft, setDraft] = useState('')
+  const [editingTranslationId, setEditingTranslationId] = useState<string | null>(null)
   const [view, setView] = useState<ViewMode>('edit')
   const [notice, setNotice] = useState('')
   const [creating, setCreating] = useState(false)
@@ -31,6 +32,7 @@ function App() {
   useEffect(() => {
     setSelection(null)
     setDraft('')
+    setEditingTranslationId(null)
   }, [workspace.activeProjectId])
 
   useEffect(() => {
@@ -79,6 +81,7 @@ function App() {
     }
     setSelection({ start, end, text })
     setDraft('')
+    setEditingTranslationId(null)
     window.setTimeout(() => translationRef.current?.focus(), 0)
   }
 
@@ -86,17 +89,29 @@ function App() {
     if (!selection || !draft.trim()) return
     workspace.updateActiveProject((project) => ({
       ...project,
-      translations: [...project.translations, {
-        id: crypto.randomUUID(),
-        start: selection.start,
-        end: selection.end,
-        source: selection.text,
-        translated: draft.trim(),
-      }],
+      translations: editingTranslationId
+        ? updateTranslationText(project.translations, editingTranslationId, draft.trim())
+        : [...project.translations, {
+            id: crypto.randomUUID(),
+            start: selection.start,
+            end: selection.end,
+            source: selection.text,
+            translated: draft.trim(),
+          }],
     }))
     setSelection(null)
     setDraft('')
-    setNotice('訳文を登録しました')
+    setEditingTranslationId(null)
+    setNotice(editingTranslationId ? '訳文を更新しました' : '訳文を登録しました')
+  }
+
+  const editTranslation = (id: string) => {
+    const translation = translations.find((item) => item.id === id)
+    if (!translation) return
+    setSelection({ start: translation.start, end: translation.end, text: translation.source })
+    setDraft(translation.translated)
+    setEditingTranslationId(id)
+    window.setTimeout(() => translationRef.current?.focus(), 0)
   }
 
   const updateSource = (next: string) => {
@@ -104,6 +119,8 @@ function App() {
     workspace.updateActiveProject((project) => ({ ...project, source: next, translations: shouldClear ? [] : project.translations }))
     if (shouldClear) {
       setSelection(null)
+      setDraft('')
+      setEditingTranslationId(null)
       setNotice('原文を編集したため、登録済みの訳文をクリアしました')
     }
   }
@@ -112,6 +129,8 @@ function App() {
     if (!workspace.activeProject || !window.confirm('このプロジェクトの原文とすべての訳文を削除しますか？')) return
     workspace.updateActiveProject((project) => ({ ...project, source: '', translations: [] }))
     setSelection(null)
+    setDraft('')
+    setEditingTranslationId(null)
   }
 
   return (
@@ -147,6 +166,7 @@ function App() {
               source={source}
               translations={sortedTranslations}
               selection={selection}
+              editingTranslationId={editingTranslationId}
               draft={draft}
               sourceRef={sourceRef}
               translationRef={translationRef}
@@ -155,11 +175,19 @@ function App() {
               onCaptureSelection={captureSelection}
               onDraftChange={setDraft}
               onSaveTranslation={saveTranslation}
-              onCancelSelection={() => setSelection(null)}
-              onDeleteTranslation={(id) => workspace.updateActiveProject((project) => ({
-                ...project,
-                translations: project.translations.filter((translation) => translation.id !== id),
-              }))}
+              onCancelSelection={() => { setSelection(null); setDraft(''); setEditingTranslationId(null) }}
+              onEditTranslation={editTranslation}
+              onDeleteTranslation={(id) => {
+                workspace.updateActiveProject((project) => ({
+                  ...project,
+                  translations: project.translations.filter((translation) => translation.id !== id),
+                }))
+                if (editingTranslationId === id) {
+                  setSelection(null)
+                  setDraft('')
+                  setEditingTranslationId(null)
+                }
+              }}
             />
           ) : (
             <Reader title={workspace.activeProject.title} source={source} translations={sortedTranslations} onEdit={() => setView('edit')} />

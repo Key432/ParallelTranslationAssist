@@ -12,6 +12,7 @@ describe('TranslationWorkspace', () => {
         source="Source"
         translations={[]}
         selection={null}
+        editingTranslationId={null}
         draft=""
         sourceRef={createRef<HTMLTextAreaElement>()}
         translationRef={createRef<HTMLTextAreaElement>()}
@@ -21,6 +22,7 @@ describe('TranslationWorkspace', () => {
         onDraftChange={jest.fn()}
         onSaveTranslation={jest.fn()}
         onCancelSelection={jest.fn()}
+        onEditTranslation={jest.fn()}
         onDeleteTranslation={jest.fn()}
       />,
     )
@@ -30,5 +32,58 @@ describe('TranslationWorkspace', () => {
     expect(status).toHaveValue('翻訳中')
     fireEvent.change(status, { target: { value: '初稿完了' } })
     expect(onStatusChange).toHaveBeenCalledWith('初稿完了')
+  })
+
+  test('starts editing an existing translation from its edit button', () => {
+    const onEditTranslation = jest.fn()
+    const translation = { id: 't1', start: 0, end: 6, source: 'Source', translated: '訳文' }
+    const { rerender } = render(
+      <TranslationWorkspace
+        title="Project"
+        status="翻訳中"
+        source="Source"
+        translations={[translation]}
+        selection={null}
+        editingTranslationId={null}
+        draft=""
+        sourceRef={createRef<HTMLTextAreaElement>()}
+        translationRef={createRef<HTMLTextAreaElement>()}
+        onSourceChange={jest.fn()}
+        onStatusChange={jest.fn()}
+        onCaptureSelection={jest.fn()}
+        onDraftChange={jest.fn()}
+        onSaveTranslation={jest.fn()}
+        onCancelSelection={jest.fn()}
+        onEditTranslation={onEditTranslation}
+        onDeleteTranslation={jest.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'この対訳を編集' }))
+    expect(onEditTranslation).toHaveBeenCalledWith('t1')
+
+    rerender(
+      <TranslationWorkspace
+        title="Project"
+        status="翻訳中"
+        source="Source"
+        translations={[translation]}
+        selection={{ start: 0, end: 6, text: 'Source' }}
+        editingTranslationId="t1"
+        draft="訳文"
+        sourceRef={createRef<HTMLTextAreaElement>()}
+        translationRef={createRef<HTMLTextAreaElement>()}
+        onSourceChange={jest.fn()}
+        onStatusChange={jest.fn()}
+        onCaptureSelection={jest.fn()}
+        onDraftChange={jest.fn()}
+        onSaveTranslation={jest.fn()}
+        onCancelSelection={jest.fn()}
+        onEditTranslation={onEditTranslation}
+        onDeleteTranslation={jest.fn()}
+      />,
+    )
+    expect(screen.getByText('編集中の原文')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'この対訳を編集' }).closest('.pair-card')).toHaveClass('editing')
   })
 })
