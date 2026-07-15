@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import App from './App'
 import { STORAGE_KEY } from './services/workspaceStorage'
+import { serializeProject } from './services/projectTransfer'
 
 describe('App translation editing', () => {
   beforeEach(() => {
@@ -207,5 +208,50 @@ describe('App translation editing', () => {
     fireEvent.change(sourceText, { target: { value: 'Hullo world' } })
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
     expect(keptCard).toHaveTextContent('Hullo')
+  })
+
+  test('appends an imported text file while preserving translations', async () => {
+    render(<App />)
+    const file = new File(['Imported'], 'source.md', { type: 'text/markdown' })
+    Object.defineProperty(file, 'text', { value: () => Promise.resolve('Imported') })
+    fireEvent.change(screen.getByTestId('source-file-input'), { target: { files: [file] } })
+
+    const dialog = await screen.findByRole('alertdialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: '続きとして追加' }))
+
+    expect(screen.getByRole('textbox', { name: '翻訳する原文' })).toHaveValue('Hello world\nImported')
+    expect(screen.getByRole('button', { name: 'この対訳を編集' })).toBeInTheDocument()
+  })
+
+  test('overwrites source from an imported text file and removes translations', async () => {
+    render(<App />)
+    const file = new File(['Imported'], 'source.txt', { type: 'text/plain' })
+    Object.defineProperty(file, 'text', { value: () => Promise.resolve('Imported') })
+    fireEvent.change(screen.getByTestId('source-file-input'), { target: { files: [file] } })
+
+    const dialog = await screen.findByRole('alertdialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: '上書き' }))
+
+    expect(screen.getByRole('textbox', { name: '翻訳する原文' })).toHaveValue('Imported')
+    expect(screen.queryByRole('button', { name: 'この対訳を編集' })).not.toBeInTheDocument()
+  })
+
+  test('imports a complete project after overwrite confirmation', async () => {
+    render(<App />)
+    const importedProject = {
+      id: 'imported', title: 'Imported project', status: '完了' as const, source: 'Imported source',
+      translations: [{ id: 'imported-translation', start: 0, end: 8, source: 'Imported', translated: 'インポート済み' }],
+    }
+    const file = new File([serializeProject(importedProject)], 'project.json', { type: 'application/json' })
+    Object.defineProperty(file, 'text', { value: () => Promise.resolve(serializeProject(importedProject)) })
+    fireEvent.change(screen.getByTestId('project-file-input'), { target: { files: [file] } })
+
+    const dialog = await screen.findByRole('alertdialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: '続ける' }))
+
+    expect(screen.getByRole('heading', { name: 'Imported project' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'プロジェクトステータス' })).toHaveValue('完了')
+    expect(screen.getByRole('textbox', { name: '翻訳する原文' })).toHaveValue('Imported source')
+    expect(screen.getByText('インポート済み')).toBeInTheDocument()
   })
 })

@@ -1,4 +1,5 @@
 import type { ViewMode } from '../types'
+import { ProjectTransferControls, type TransferActions } from './ProjectTransferControls'
 
 type Props = {
   view: ViewMode
@@ -7,9 +8,10 @@ type Props = {
   onToggleSidebar: () => void
   onViewChange: (view: ViewMode) => void
   onClear: () => void
+  transferActions: TransferActions
 }
 
-export function AppHeader({ view, hasActiveProject, sidebarOpen, onToggleSidebar, onViewChange, onClear }: Props) {
+export function AppHeader({ view, hasActiveProject, sidebarOpen, onToggleSidebar, onViewChange, onClear, transferActions }: Props) {
   return (
     <header className="topbar">
       <div className="brand-area">
@@ -32,6 +34,7 @@ export function AppHeader({ view, hasActiveProject, sidebarOpen, onToggleSidebar
         <button className={view === 'read' ? 'active' : ''} disabled={!hasActiveProject} onClick={() => onViewChange('read')}>閲覧</button>
       </nav>
       <div className="header-meta">
+        <ProjectTransferControls actions={transferActions} disabled={!hasActiveProject} />
         <span><i className="status-dot" />端末内に保存</span>
         {hasActiveProject && <button className="text-button danger" onClick={onClear}>この内容を消去</button>}
       </div>

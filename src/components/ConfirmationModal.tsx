@@ -6,10 +6,12 @@ type Props = {
   description?: string
   onCancel: () => void
   onConfirm: () => void
-  onKeep: () => void
+  onKeep?: () => void
+  confirmLabel?: string
+  keepLabel?: string
 }
 
-export function ConfirmationModal({ count = 1, title, description, onCancel, onConfirm, onKeep }: Props) {
+export function ConfirmationModal({ count = 1, title, description, onCancel, onConfirm, onKeep, confirmLabel = '破棄して続ける', keepLabel = '訳文を保持' }: Props) {
   const confirmRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -31,8 +33,8 @@ export function ConfirmationModal({ count = 1, title, description, onCancel, onC
         </p>
         <div className="modal-actions">
           <button className="text-button" onClick={onCancel}>キャンセル</button>
-          <button ref={confirmRef} className="primary danger-action" onClick={onConfirm}>破棄して続ける</button>
-          <button className="primary keep-action" onClick={onKeep}>訳文を保持</button>
+          <button ref={confirmRef} className="primary danger-action" onClick={onConfirm}>{confirmLabel}</button>
+          {onKeep && <button className="primary keep-action" onClick={onKeep}>{keepLabel}</button>}
         </div>
       </section>
     </div>

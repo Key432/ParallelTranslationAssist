@@ -10,6 +10,8 @@ import type { TextEdit } from './domain/translations'
 import { useWorkspace } from './hooks/useWorkspace'
 import { useOutsideClick } from './hooks/useOutsideClick'
 import type { Project, Selection, ViewMode } from './types'
+import { downloadFile } from './services/browserFiles'
+import { buildParallelText, buildTranslationsText, parseProjectFile, safeFileName, serializeProject } from './services/projectTransfer'
 
 type PendingDiscard = {
   selection: Selection
@@ -32,6 +34,8 @@ function App() {
   const [editingTranslationId, setEditingTranslationId] = useState<string | null>(null)
   const [pendingDiscard, setPendingDiscard] = useState<PendingDiscard | null>(null)
   const [pendingSourceUpdate, setPendingSourceUpdate] = useState<PendingSourceUpdate | null>(null)
+  const [pendingTextImport, setPendingTextImport] = useState<string | null>(null)
+  const [pendingProjectImport, setPendingProjectImport] = useState<Project | null>(null)
   const [view, setView] = useState<ViewMode>('edit')
   const [notice, setNotice] = useState('')
   const [creating, setCreating] = useState(false)
@@ -54,6 +58,8 @@ function App() {
     setPendingDiscard(null)
     setPendingSourceUpdate(null)
     approvedSourceKeepIds.current.clear()
+    setPendingTextImport(null)
+    setPendingProjectImport(null)
   }, [workspace.activeProjectId])
 
   useEffect(() => {
@@ -287,6 +293,67 @@ function App() {
     setEditingTranslationId(null)
   }
 
+  const resetTranslationForm = () => {
+    setSelection(null)
+    setDraft('')
+    setEditingTranslationId(null)
+    setPendingDiscard(null)
+    setPendingSourceUpdate(null)
+  }
+
+  const applyTextImport = (contents: string, mode: 'overwrite' | 'append') => {
+    workspace.updateActiveProject((project) => ({
+      ...project,
+      source: mode === 'overwrite'
+        ? contents
+        : `${project.source}${project.source.endsWith('\n') || contents.startsWith('\n') ? '' : '\n'}${contents}`,
+      translations: mode === 'overwrite' ? [] : project.translations,
+    }))
+    resetTranslationForm()
+    setPendingTextImport(null)
+    setNotice(mode === 'overwrite' ? '原文をインポートしました' : '原文の続きに追加しました')
+  }
+
+  const importSourceFile = (contents: string) => {
+    if (!workspace.activeProject) return
+    if (workspace.activeProject.source || workspace.activeProject.translations.length > 0) setPendingTextImport(contents)
+    else applyTextImport(contents, 'overwrite')
+  }
+
+  const applyProjectImport = (imported: Project) => {
+    if (!workspace.activeProjectId) return
+    workspace.updateActiveProject(() => ({ ...imported, id: workspace.activeProjectId as string }))
+    resetTranslationForm()
+    setPendingProjectImport(null)
+    setView('edit')
+    setNotice('プロジェクトをインポートしました')
+  }
+
+  const importProjectFile = (contents: string) => {
+    try {
+      const imported = parseProjectFile(contents)
+      if (source || translations.length > 0) setPendingProjectImport(imported)
+      else applyProjectImport(imported)
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'プロジェクトを読み取れませんでした')
+    }
+  }
+
+  const exportProjectFile = () => {
+    if (!workspace.activeProject) return
+    downloadFile(`${safeFileName(workspace.activeProject.title)}.pta.json`, serializeProject(workspace.activeProject), 'application/json;charset=utf-8')
+  }
+
+  const exportTranslationsFile = () => {
+    if (!workspace.activeProject) return
+    downloadFile(`${safeFileName(workspace.activeProject.title)}-translations.txt`, buildTranslationsText(workspace.activeProject), 'text/plain;charset=utf-8')
+  }
+
+  const exportParallelTextFile = () => {
+    if (!workspace.activeProject) return
+    downloadFile(`${safeFileName(workspace.activeProject.title)}-parallel.txt`, buildParallelText(workspace.activeProject), 'text/plain;charset=utf-8')
+  }
+
   return (
     <div className="app-shell">
       <AppHeader
@@ -296,6 +363,13 @@ function App() {
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         onViewChange={setView}
         onClear={clearActiveProject}
+        transferActions={{
+          importSource: importSourceFile,
+          importProject: importProjectFile,
+          exportProject: exportProjectFile,
+          exportTranslations: exportTranslationsFile,
+          exportParallelText: exportParallelTextFile,
+        }}
       />
       <div className="app-body">
         <ProjectSidebar
@@ -366,6 +440,26 @@ function App() {
           onCancel={cancelSourceUpdate}
           onConfirm={() => confirmSourceUpdate('discard')}
           onKeep={() => confirmSourceUpdate('keep')}
+        />
+      )}
+      {pendingTextImport !== null && (
+        <ConfirmationModal
+          title="原文をインポートしますか？"
+          description={`現在の原文${translations.length > 0 ? 'と登録済みの対訳' : ''}があります。「上書き」は現在の原文を置き換え${translations.length > 0 ? '、登録済みの対訳をすべて削除し' : ''}ます。「続きとして追加」は現在の原文の末尾に改行して追加し、登録済みの対訳を維持します。`}
+          onCancel={() => setPendingTextImport(null)}
+          onConfirm={() => applyTextImport(pendingTextImport, 'overwrite')}
+          onKeep={() => applyTextImport(pendingTextImport, 'append')}
+          confirmLabel="上書き"
+          keepLabel="続きとして追加"
+        />
+      )}
+      {pendingProjectImport && (
+        <ConfirmationModal
+          title="現在のプロジェクトを上書きしますか？"
+          description="インポートすると、現在のタイトル、ステータス、原文、登録済みの対訳はすべてプロジェクトファイルの内容に置き換わります。この操作は取り消せません。"
+          onCancel={() => setPendingProjectImport(null)}
+          onConfirm={() => applyProjectImport(pendingProjectImport)}
+          confirmLabel="続ける"
         />
       )}
       {notice && <div className="toast" role="status">{notice}</div>}

@@ -35,6 +35,16 @@ button { color: inherit; }
 .header-meta { justify-self: end; display: flex; align-items: center; gap: 24px; color: var(--muted); font-size: 12px; }
 .header-meta > span { display: flex; align-items: center; gap: 8px; }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #668b72; box-shadow: 0 0 0 3px #668b721b; }
+.transfer-controls { display: flex; align-items: center; gap: 7px; }
+.transfer-menu { position: relative; }
+.header-action { border: 1px solid var(--line); border-radius: 3px; background: var(--paper); padding: 7px 10px; color: var(--ink); font-size: 10px; cursor: pointer; }
+.header-action:hover, .header-action[aria-expanded='true'] { border-color: #aaa89f; background: white; }
+.header-action:disabled { opacity: .4; cursor: default; }
+.transfer-popover { position: absolute; top: calc(100% + 9px); right: 0; width: 200px; padding: 6px; border: 1px solid var(--line); background: var(--paper); box-shadow: 0 12px 35px #292c2b20; z-index: 60; }
+.transfer-popover button { display: block; width: 100%; border: 0; background: transparent; padding: 10px; text-align: left; font-size: 11px; cursor: pointer; }
+.transfer-popover button:hover { background: #ebe7dc; color: var(--accent); }
+.export-popover { width: 226px; }
+.visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
 
 .app-body { flex: 1; display: flex; align-items: stretch; min-height: 0; }
 main { flex: 1; min-width: 0; }
@@ -171,6 +181,7 @@ footer { border-top: 1px solid var(--line); margin-top: auto; padding: 25px clam
 
 @media (max-width: 800px) {
   .topbar { grid-template-columns: 1fr auto; }
+  .header-meta { grid-column: 2; grid-row: 1; gap: 10px; }
   .project-sidebar { position: fixed; left: 0; top: 72px; bottom: 0; height: auto; min-height: 0; width: min(310px, calc(100vw - 42px)); flex-basis: auto; box-shadow: 18px 0 45px #272a2530; }
   .project-sidebar.closed { width: min(310px, calc(100vw - 42px)); transform: translateX(-100%); box-shadow: none; }
   .project-actions { display: flex; }
@@ -193,9 +204,12 @@ footer { border-top: 1px solid var(--line); margin-top: auto; padding: 25px clam
 }
 
 @media (max-width: 480px) {
-  .header-meta { display: none; }
+  .header-meta > .danger { display: none; }
   .topbar { display: flex; padding: 0 13px; }
   .brand-area { gap: 11px; }
+  .brand > span:last-child { display: none; }
+  .header-meta { margin-left: auto; }
+  .header-action { padding: 6px 7px; font-size: 9px; }
   .workspace, .reader { width: calc(100% - 20px); }
   .translation-form > textarea { padding: 24px; }
   .source-editor textarea, .source-highlight { padding: 24px; }
