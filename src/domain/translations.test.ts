@@ -1,4 +1,4 @@
-import { buildReaderRows, buildSourceSegments, findExactTranslation, findOverlappingTranslations, mergeTranslationTexts, overlapsTranslation, sortTranslations, updateTranslationText } from './translations'
+import { buildReaderRows, buildSourceSegments, calculateTextEdit, findExactTranslation, findOverlappingTranslations, findTranslationsAffectedByEdit, mergeTranslationTexts, overlapsTranslation, reconcileTranslationsAfterEdit, sortTranslations, updateTranslationText } from './translations'
 import type { Translation } from '../types'
 
 const translations: Translation[] = [
@@ -56,5 +56,30 @@ describe('translation domain', () => {
 
   test('merges translation texts in source order with paragraph breaks', () => {
     expect(mergeTranslationTexts(translations)).toBe('最初\n\n二番目')
+  })
+
+  test('calculates the minimal replaced source range', () => {
+    expect(calculateTextEdit('Hello world', 'Hello brave world')).toEqual({ start: 6, end: 6, insertedText: 'brave ' })
+    expect(calculateTextEdit('Hello world', 'Hallo world')).toEqual({ start: 1, end: 2, insertedText: 'a' })
+  })
+
+  test('distinguishes edits inside translations from edits at their boundaries', () => {
+    const hello: Translation = { id: 'hello', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' }
+    expect(findTranslationsAffectedByEdit({ start: 2, end: 2, insertedText: 'x' }, [hello])).toEqual([hello])
+    expect(findTranslationsAffectedByEdit({ start: 0, end: 0, insertedText: 'x' }, [hello])).toEqual([])
+    expect(findTranslationsAffectedByEdit({ start: 5, end: 5, insertedText: 'x' }, [hello])).toEqual([])
+  })
+
+  test('discards only affected translations and shifts later ranges', () => {
+    const edit = calculateTextEdit('First gap123 Second', 'Changed gap123 Second')
+    const reconciled = reconcileTranslationsAfterEdit('Changed gap123 Second', edit, translations, 'discard')
+    expect(reconciled).toEqual([{ ...translations[0], start: 15, end: 21 }])
+  })
+
+  test('keeps affected translations by updating their source range', () => {
+    const hello: Translation = { id: 'hello', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' }
+    const nextSource = 'Hallo world'
+    const reconciled = reconcileTranslationsAfterEdit(nextSource, calculateTextEdit('Hello world', nextSource), [hello], 'keep')
+    expect(reconciled).toEqual([{ ...hello, source: 'Hallo' }])
   })
 })
