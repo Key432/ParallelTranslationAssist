@@ -76,7 +76,10 @@ export function ProjectSidebar({ projects, open, sidebarRef, activeProjectId, cr
             ) : (
               <>
                 <button className="project-select" onClick={() => onSelect(project.id)}>
-                  <span className="project-title">{project.title}</span>
+                  <span className="project-title-row">
+                    <span className="project-title">{project.title}</span>
+                    <span className="project-status" data-status={project.status}>{project.status}</span>
+                  </span>
                   <span className="project-meta">{project.source.length.toLocaleString()} 字 · {project.translations.length} 訳</span>
                 </button>
                 <div className="project-actions">

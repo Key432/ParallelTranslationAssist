@@ -59,7 +59,14 @@ main { flex: 1; min-width: 0; }
 .project-item.active { background: var(--paper); border-color: #d2cec3; box-shadow: 0 4px 14px #34382f0a; }
 .project-item.active::before { content: ''; width: 3px; position: absolute; left: -1px; top: 11px; bottom: 11px; background: var(--accent); border-radius: 0 3px 3px 0; }
 .project-select { min-width: 0; flex: 1; text-align: left; border: 0; background: transparent; padding: 13px 7px 13px 15px; cursor: pointer; }
-.project-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 13px 'Noto Serif JP', serif; }
+.project-title-row { display: flex; align-items: center; justify-content: space-between; gap: 9px; min-width: 0; }
+.project-title { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 13px 'Noto Serif JP', serif; }
+.project-status { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; color: #747a73; font-size: 8px; letter-spacing: .03em; white-space: nowrap; }
+.project-status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #9b9d96; }
+.project-status[data-status='翻訳中']::before, .project-status[data-status='修正中']::before { background: #d08047; }
+.project-status[data-status='初稿完了']::before { background: #68819b; }
+.project-status[data-status='完了']::before { background: #668b72; }
+.project-status[data-status='保留']::before { background: #a97979; }
 .project-meta { display: block; margin-top: 6px; color: #96958c; font-size: 9px; letter-spacing: .04em; }
 .project-actions { display: none; align-items: center; padding-right: 7px; }
 .project-item:hover .project-actions, .project-item:focus-within .project-actions { display: flex; }
