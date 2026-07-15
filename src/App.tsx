@@ -138,6 +138,7 @@ function App() {
           ) : view === 'edit' ? (
             <TranslationWorkspace
               title={workspace.activeProject.title}
+              status={workspace.activeProject.status}
               source={source}
               translations={sortedTranslations}
               selection={selection}
@@ -145,6 +146,7 @@ function App() {
               sourceRef={sourceRef}
               translationRef={translationRef}
               onSourceChange={updateSource}
+              onStatusChange={(status) => workspace.updateActiveProject((project) => ({ ...project, status }))}
               onCaptureSelection={captureSelection}
               onDraftChange={setDraft}
               onSaveTranslation={saveTranslation}

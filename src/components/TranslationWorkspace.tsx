@@ -1,8 +1,10 @@
 import type { RefObject } from 'react'
-import type { Selection, Translation } from '../types'
+import { PROJECT_STATUSES } from '../domain/projects'
+import type { ProjectStatus, Selection, Translation } from '../types'
 
 type Props = {
   title: string
+  status: ProjectStatus
   source: string
   translations: Translation[]
   selection: Selection | null
@@ -10,6 +12,7 @@ type Props = {
   sourceRef: RefObject<HTMLTextAreaElement | null>
   translationRef: RefObject<HTMLTextAreaElement | null>
   onSourceChange: (source: string) => void
+  onStatusChange: (status: ProjectStatus) => void
   onCaptureSelection: () => void
   onDraftChange: (draft: string) => void
   onSaveTranslation: () => void
@@ -19,6 +22,7 @@ type Props = {
 
 export function TranslationWorkspace({
   title,
+  status,
   source,
   translations,
   selection,
@@ -26,6 +30,7 @@ export function TranslationWorkspace({
   sourceRef,
   translationRef,
   onSourceChange,
+  onStatusChange,
   onCaptureSelection,
   onDraftChange,
   onSaveTranslation,
@@ -36,9 +41,14 @@ export function TranslationWorkspace({
     <section className="workspace" aria-label="翻訳編集">
       <div className="intro">
         <div>
-          <p className="project-kicker">{title}</p>
+          <label className="status-control">
+            <span>STATUS</span>
+            <select value={status} onChange={(event) => onStatusChange(event.target.value as ProjectStatus)} aria-label="プロジェクトステータス">
+              {PROJECT_STATUSES.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </label>
           <p className="eyebrow">TRANSLATION WORKSPACE</p>
-          <h1>文章を選び、訳を重ねる。</h1>
+          <h1>{title}</h1>
         </div>
         <p className="intro-help">原文から一文、複数文、または段落を選択し、<br />「選択範囲を翻訳」を押してください。</p>
       </div>

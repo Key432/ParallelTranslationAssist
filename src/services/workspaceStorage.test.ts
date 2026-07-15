@@ -10,7 +10,10 @@ describe('workspace storage', () => {
     const projects = [{ id: 'project-1', title: 'Test', source: 'Source', translations: [] }]
     const storage = storageWith({ [STORAGE_KEY]: JSON.stringify({ projects, activeProjectId: 'missing' }) })
 
-    expect(loadWorkspaceState(storage)).toEqual({ projects, activeProjectId: 'project-1' })
+    expect(loadWorkspaceState(storage)).toEqual({
+      projects: [{ ...projects[0], status: '未着手' }],
+      activeProjectId: 'project-1',
+    })
   })
 
   test('migrates legacy source and translations into a project', () => {

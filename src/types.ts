@@ -9,9 +9,12 @@ export type Translation = {
 export type Project = {
   id: string
   title: string
+  status: ProjectStatus
   source: string
   translations: Translation[]
 }
+
+export type ProjectStatus = '未着手' | '翻訳中' | '初稿完了' | '修正中' | '完了' | '保留'
 
 export type WorkspaceState = {
   projects: Project[]

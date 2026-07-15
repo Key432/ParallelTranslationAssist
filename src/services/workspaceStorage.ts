@@ -1,4 +1,4 @@
-import { createProject, isProject } from '../domain/projects'
+import { createProject, normalizeProject } from '../domain/projects'
 import type { Translation, WorkspaceState } from '../types'
 
 export const STORAGE_KEY = 'parallel-translation-assist:v2'
@@ -23,7 +23,9 @@ export function loadWorkspaceState(storage: Pick<Storage, 'getItem'> = localStor
     const saved = storage.getItem(STORAGE_KEY)
     if (saved) {
       const parsed = JSON.parse(saved) as Partial<WorkspaceState>
-      const projects = Array.isArray(parsed.projects) ? parsed.projects.filter(isProject) : []
+      const projects = Array.isArray(parsed.projects)
+        ? parsed.projects.map(normalizeProject).filter((project) => project !== null)
+        : []
       const activeProjectId = projects.some((project) => project.id === parsed.activeProjectId)
         ? parsed.activeProjectId as string
         : projects[0]?.id ?? null
