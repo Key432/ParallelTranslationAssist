@@ -1,0 +1,43 @@
+import { buildReaderRows } from '../domain/translations'
+import type { Translation } from '../types'
+
+type Props = {
+  title: string
+  source: string
+  translations: Translation[]
+  onEdit: () => void
+}
+
+export function Reader({ title, source, translations, onEdit }: Props) {
+  if (translations.length === 0) {
+    return (
+      <section className="reader empty-reader">
+        <p className="project-kicker">{title}</p>
+        <p className="eyebrow">PARALLEL READING</p>
+        <h1>まだ対訳がありません。</h1>
+        <p>原文を選択し、最初の訳文を登録すると、ここに並んで表示されます。</p>
+        <button className="primary" onClick={onEdit}>編集へ戻る →</button>
+      </section>
+    )
+  }
+
+  const rows = buildReaderRows(source, translations)
+  return (
+    <section className="reader">
+      <div className="reader-heading">
+        <div><p className="project-kicker">{title}</p><p className="eyebrow">PARALLEL READING</p><h1>原文と訳文</h1></div>
+        <p>{translations.length} 件の訳文 · 未訳部分も原文の流れに沿って表示</p>
+      </div>
+      <div className="reader-table">
+        <div className="reader-label"><span>ORIGINAL · EN</span><span>TRANSLATION · JA</span></div>
+        {rows.map((row, index) => (
+          <article className={row.translatedRow ? 'reader-row' : 'reader-row untranslated'} key={row.id}>
+            <span className="row-number">{String(index + 1).padStart(2, '0')}</span>
+            <p lang="en">{row.source}</p>
+            <p lang="ja">{row.translated}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
