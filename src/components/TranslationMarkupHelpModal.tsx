@@ -7,7 +7,7 @@ type Props = {
 
 const EXAMPLES = [
   { label: '太字', markup: '**テキスト**' },
-  { label: 'イタリック', markup: '_テキスト_' },
+  { label: '下線', markup: '_テキスト_' },
   { label: '打消し線', markup: '~テキスト~' },
   { label: 'ルビ', markup: '|漢字《かんじ》' },
 ]

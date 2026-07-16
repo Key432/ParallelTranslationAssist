@@ -5,7 +5,7 @@ describe('translation markup', () => {
     expect(parseTranslationMarkup('**太字** _斜体_ ~取消~ |漢字《かんじ》 ｜言葉《ことば》')).toEqual([
       { type: 'strong', children: [{ type: 'text', value: '太字' }] },
       { type: 'text', value: ' ' },
-      { type: 'emphasis', children: [{ type: 'text', value: '斜体' }] },
+      { type: 'underline', children: [{ type: 'text', value: '斜体' }] },
       { type: 'text', value: ' ' },
       { type: 'strikethrough', children: [{ type: 'text', value: '取消' }] },
       { type: 'text', value: ' ' },
@@ -15,13 +15,13 @@ describe('translation markup', () => {
     ])
   })
 
-  test('supports nested emphasis and preserves incomplete markup as text', () => {
+  test('supports nested underline and preserves incomplete markup as text', () => {
     expect(parseTranslationMarkup('**強い _強調_** と **未完')).toEqual([
       {
         type: 'strong',
         children: [
           { type: 'text', value: '強い ' },
-          { type: 'emphasis', children: [{ type: 'text', value: '強調' }] },
+          { type: 'underline', children: [{ type: 'text', value: '強調' }] },
         ],
       },
       { type: 'text', value: ' と **未完' },
