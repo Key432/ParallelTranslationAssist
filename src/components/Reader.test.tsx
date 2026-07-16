@@ -17,17 +17,17 @@ describe('Reader', () => {
         title="Project"
         author="Author Name"
         sourceUrl="https://example.com/source"
-        source="Hello world"
-        translations={[{ id: 't1', start: 0, end: 5, source: 'Hello', translated: '**こんにちは**' }]}
+        source="**Hello** _world_"
+        translations={[{ id: 't1', start: 0, end: 9, source: '**Hello**', translated: '**こんにちは**' }]}
         originalLanguage="FRENCH"
         translatedLanguage="KOREAN"
         onEdit={jest.fn()}
       />,
     )
 
-    expect(screen.getByText('Hello')).toBeInTheDocument()
+    expect(screen.getByText('Hello').tagName).toBe('STRONG')
     expect(screen.getByText('こんにちは').tagName).toBe('STRONG')
-    expect(screen.getByText('world')).toBeInTheDocument()
+    expect(screen.getByText('world').tagName).toBe('EM')
     expect(screen.getByText('ORIGINAL · FRENCH')).toBeInTheDocument()
     expect(screen.getByText('TRANSLATION · KOREAN')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Project' })).toBeInTheDocument()

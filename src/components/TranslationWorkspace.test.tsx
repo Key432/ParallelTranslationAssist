@@ -195,7 +195,8 @@ describe('TranslationWorkspace', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '訳文の記法を確認' }))
     expect(screen.getByRole('dialog', { name: '訳文の記法' })).toBeInTheDocument()
-    expect(screen.getByText('下線', { selector: 'dt' })).toBeInTheDocument()
+    expect(screen.getByText('強調', { selector: 'dt' })).toBeInTheDocument()
+    expect(screen.getByText(/原文または訳文に次の記法/)).toBeInTheDocument()
     expect(screen.getByText('|漢字《かんじ》', { selector: 'code' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '訳文の記法を閉じる' }))
     expect(screen.queryByRole('dialog', { name: '訳文の記法' })).not.toBeInTheDocument()

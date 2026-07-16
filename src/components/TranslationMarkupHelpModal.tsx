@@ -7,7 +7,7 @@ type Props = {
 
 const EXAMPLES = [
   { label: '太字', markup: '**テキスト**' },
-  { label: '下線', markup: '_テキスト_' },
+  { label: '強調', markup: '_テキスト_' },
   { label: '打消し線', markup: '~テキスト~' },
   { label: 'ルビ', markup: '|漢字《かんじ》' },
 ]
@@ -34,7 +34,7 @@ export function TranslationMarkupHelpModal({ onClose }: Props) {
           </div>
           <button ref={closeRef} className="statistics-close" onClick={onClose} aria-label="訳文の記法を閉じる">×</button>
         </header>
-        <p className="markup-help-description">訳文に次の記法を入力すると、登録後の対訳と閲覧画面でスタイルが適用されます。</p>
+        <p className="markup-help-description">原文または訳文に次の記法を入力すると、登録後の対訳と閲覧画面でスタイルが適用されます。</p>
         <dl className="markup-examples">
           {EXAMPLES.map((example) => (
             <div key={example.label}>

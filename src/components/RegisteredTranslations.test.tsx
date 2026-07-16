@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { RegisteredTranslations } from './RegisteredTranslations'
 
 const translations = [
-  { id: 'hello', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
+  { id: 'hello', start: 0, end: 9, source: '**Hello**', translated: 'こんにちは' },
   { id: 'world', start: 6, end: 11, source: 'world', translated: '世界' },
   { id: 'hello-again', start: 12, end: 23, source: 'Hello again', translated: 'また会いました' },
 ]
@@ -21,6 +21,12 @@ function renderList() {
 }
 
 describe('RegisteredTranslations', () => {
+  test('renders markup in registered source text', () => {
+    renderList()
+    expect(screen.getByText('Hello').tagName).toBe('STRONG')
+    expect(screen.queryByText('**Hello**')).not.toBeInTheDocument()
+  })
+
   test('labels edit and delete icon buttons with hover explanations', () => {
     renderList()
     expect(within(screen.getAllByRole('button', { name: 'この対訳を編集' })[0]).getByRole('tooltip')).toHaveTextContent('編集')

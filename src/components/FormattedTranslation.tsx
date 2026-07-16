@@ -11,7 +11,7 @@ function renderNode(node: TranslationMarkupNode, key: string): ReactNode {
 
   const children = node.children.map((child, index) => renderNode(child, `${key}-${index}`))
   if (node.type === 'strong') return <strong key={key}>{children}</strong>
-  if (node.type === 'underline') return <span key={key} style={{ textDecoration: 'underline' }}>{children}</span>
+  if (node.type === 'emphasis') return <em key={key}>{children}</em>
   return <s key={key}>{children}</s>
 }
 

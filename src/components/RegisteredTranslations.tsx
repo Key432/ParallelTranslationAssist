@@ -66,7 +66,7 @@ export function RegisteredTranslations({
         {visibleTranslations.map(({ translation: item, index }) => (
           <article className={`pair-card ${editingTranslationId === item.id ? 'editing' : ''}`} key={item.id}>
             <span className="pair-number">{String(index + 1).padStart(2, '0')}</span>
-            <p className="pair-source" lang={projectLanguageLocale(originalLanguage)}>{item.source}</p>
+            <p className="pair-source" lang={projectLanguageLocale(originalLanguage)}><FormattedTranslation>{item.source}</FormattedTranslation></p>
             <p className="pair-translation" lang={projectLanguageLocale(translatedLanguage)}><FormattedTranslation>{item.translated}</FormattedTranslation></p>
             <div className="pair-actions">
               <button className="icon-tooltip-button" aria-label="この対訳を編集" onClick={() => onEditTranslation(item.id)}>
