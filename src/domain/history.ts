@@ -29,8 +29,8 @@ export function snapshotProject(project: Project): ProjectSnapshot {
   return cloneSnapshot(project)
 }
 
-export function restoreProject(projectId: string, snapshot: ProjectSnapshot): Project {
-  return { id: projectId, ...cloneSnapshot(snapshot) }
+export function restoreProject(projectId: string, snapshot: ProjectSnapshot, updatedAt: string): Project {
+  return { id: projectId, ...cloneSnapshot(snapshot), updatedAt }
 }
 
 export function projectContentsEqual(left: Project | ProjectSnapshot, right: Project | ProjectSnapshot): boolean {
@@ -52,20 +52,20 @@ export function recordProjectChange(
   history: ProjectHistory,
 ): HistoryTransition {
   if (projectContentsEqual(current, next)) {
-    return { project: restoreProject(current.id, snapshotProject(current)), history: cloneHistory(history) }
+    return { project: restoreProject(current.id, snapshotProject(current), current.updatedAt), history: cloneHistory(history) }
   }
   const past = [...history.past.map(cloneSnapshot), snapshotProject(current)].slice(-MAX_HISTORY_ENTRIES)
   return {
-    project: restoreProject(current.id, snapshotProject(next)),
+    project: restoreProject(current.id, snapshotProject(next), next.updatedAt),
     history: { past, future: [] },
   }
 }
 
-export function undoProject(current: Project, history: ProjectHistory): HistoryTransition | null {
+export function undoProject(current: Project, history: ProjectHistory, updatedAt = new Date().toISOString()): HistoryTransition | null {
   if (history.past.length === 0) return null
   const target = history.past[history.past.length - 1]
   return {
-    project: restoreProject(current.id, target),
+    project: restoreProject(current.id, target, updatedAt),
     history: {
       past: history.past.slice(0, -1).map(cloneSnapshot),
       future: [snapshotProject(current), ...history.future.map(cloneSnapshot)],
@@ -73,11 +73,11 @@ export function undoProject(current: Project, history: ProjectHistory): HistoryT
   }
 }
 
-export function redoProject(current: Project, history: ProjectHistory): HistoryTransition | null {
+export function redoProject(current: Project, history: ProjectHistory, updatedAt = new Date().toISOString()): HistoryTransition | null {
   if (history.future.length === 0) return null
   const [target, ...remaining] = history.future
   return {
-    project: restoreProject(current.id, target),
+    project: restoreProject(current.id, target, updatedAt),
     history: {
       past: [...history.past.map(cloneSnapshot), snapshotProject(current)],
       future: remaining.map(cloneSnapshot),

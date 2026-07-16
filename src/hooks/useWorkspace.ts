@@ -19,14 +19,15 @@ function updateProjectInWorkspace(
   const index = workspace.projects.findIndex((project) => project.id === projectId)
   if (index < 0) return workspace
   const current = workspace.projects[index]
-  const proposed = update(restoreProject(current.id, snapshotProject(current)))
-  const next = restoreProject(current.id, snapshotProject(proposed))
+  const proposed = update(restoreProject(current.id, snapshotProject(current), current.updatedAt))
+  const next = restoreProject(current.id, snapshotProject(proposed), current.updatedAt)
   if (projectContentsEqual(current, next)) return workspace
+  const changed = { ...next, updatedAt: new Date().toISOString() }
 
   const currentHistory = workspace.histories[projectId] ?? emptyProjectHistory()
   const transition = recordHistory
-    ? recordProjectChange(current, next, currentHistory)
-    : { project: next, history: currentHistory }
+    ? recordProjectChange(current, changed, currentHistory)
+    : { project: changed, history: currentHistory }
   const projects = [...workspace.projects]
   projects[index] = transition.project
   return {

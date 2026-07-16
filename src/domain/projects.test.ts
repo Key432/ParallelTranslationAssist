@@ -3,6 +3,7 @@ import { PROJECT_STATUSES, createProject, isProjectStatus, normalizeProject } fr
 describe('project domain', () => {
   test('creates a project with the not-started status', () => {
     expect(createProject('New project')).toMatchObject({ title: 'New project', status: '未着手' })
+    expect(createProject('New project').updatedAt).toEqual(expect.any(String))
   })
 
   test('defines all supported statuses', () => {
@@ -14,5 +15,6 @@ describe('project domain', () => {
   test('adds the default status to a project saved before statuses existed', () => {
     const project = normalizeProject({ id: 'legacy', title: 'Legacy', source: '', translations: [] })
     expect(project?.status).toBe('未着手')
+    expect(project?.updatedAt).toEqual(expect.any(String))
   })
 })

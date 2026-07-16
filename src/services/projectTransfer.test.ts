@@ -10,6 +10,7 @@ const project: Project = {
     { id: 'world', start: 10, end: 15, source: 'world', translated: '世界' },
     { id: 'hello', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
   ],
+  updatedAt: '2026-07-16T01:00:00.000Z',
 }
 
 describe('project transfer', () => {
@@ -20,6 +21,17 @@ describe('project transfer', () => {
   test('rejects invalid and unsupported project files', () => {
     expect(() => parseProjectFile('{broken')).toThrow('JSONファイルを読み取れませんでした。')
     expect(() => parseProjectFile(JSON.stringify({ format: 'other', version: 1, project }))).toThrow('対応していない')
+  })
+
+  test('loads legacy project files without an updated timestamp', () => {
+    const { updatedAt: _updatedAt, ...legacyProject } = project
+    const imported = parseProjectFile(JSON.stringify({
+      format: 'parallel-translation-assist',
+      version: 1,
+      exportedAt: '2026-07-15T12:00:00.000Z',
+      project: legacyProject,
+    }))
+    expect(imported.updatedAt).toBe('2026-07-15T12:00:00.000Z')
   })
 
   test('exports translated text in source order', () => {

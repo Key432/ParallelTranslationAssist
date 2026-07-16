@@ -24,7 +24,7 @@ function isTranslation(value: unknown): value is Translation {
     && typeof translation.translated === 'string'
 }
 
-function isImportedProject(value: unknown): value is Project {
+function isImportedProject(value: unknown): value is Omit<Project, 'updatedAt'> & { updatedAt?: string } {
   if (!value || typeof value !== 'object') return false
   const project = value as Partial<Project>
   return typeof project.id === 'string'
@@ -59,7 +59,15 @@ export function parseProjectFile(contents: string): Project {
   if (file.format !== PROJECT_FILE_FORMAT || file.version !== PROJECT_FILE_VERSION || !isImportedProject(file.project)) {
     throw new Error('対応していない、または破損したプロジェクトファイルです。')
   }
-  return file.project
+  const project = file.project
+  return {
+    ...project,
+    updatedAt: typeof project.updatedAt === 'string' && !Number.isNaN(Date.parse(project.updatedAt))
+      ? project.updatedAt
+      : typeof file.exportedAt === 'string' && !Number.isNaN(Date.parse(file.exportedAt))
+        ? file.exportedAt
+        : new Date().toISOString(),
+  }
 }
 
 export function buildTranslationsText(project: Project): string {

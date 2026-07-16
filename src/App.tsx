@@ -3,6 +3,7 @@ import { AppHeader } from './components/AppHeader'
 import { ConfirmationModal } from './components/ConfirmationModal'
 import { EmptyProjects } from './components/EmptyProjects'
 import { ProjectSidebar } from './components/ProjectSidebar'
+import { ProjectStatisticsModal } from './components/ProjectStatisticsModal'
 import { Reader } from './components/Reader'
 import { TranslationWorkspace } from './components/TranslationWorkspace'
 import { calculateTextEdit, findExactTranslation, findOverlappingTranslations, findTranslationsAffectedByEdit, mergeTranslationTexts, reconcileTranslationsAfterEdit, sortTranslations, updateTranslationText } from './domain/translations'
@@ -39,6 +40,7 @@ function App() {
   const [view, setView] = useState<ViewMode>('edit')
   const [notice, setNotice] = useState('')
   const [creating, setCreating] = useState(false)
+  const [statisticsOpen, setStatisticsOpen] = useState(false)
   const sourceRef = useRef<HTMLTextAreaElement>(null)
   const translationRef = useRef<HTMLTextAreaElement>(null)
   const sidebarRef = useRef<HTMLElement>(null)
@@ -82,6 +84,7 @@ function App() {
     approvedSourceKeepIds.current.clear()
     setPendingTextImport(null)
     setPendingProjectImport(null)
+    setStatisticsOpen(false)
   }, [workspace.activeProjectId, endSourceHistoryGroup])
 
   useEffect(() => () => {
@@ -459,6 +462,7 @@ function App() {
               canRedo={workspace.canRedo}
               onUndo={undoChange}
               onRedo={redoChange}
+              onOpenStatistics={() => setStatisticsOpen(true)}
               onCaptureSelection={captureSelection}
               onDraftChange={setDraft}
               onSaveTranslation={saveTranslation}
@@ -519,6 +523,9 @@ function App() {
           onConfirm={() => applyProjectImport(pendingProjectImport)}
           confirmLabel="続ける"
         />
+      )}
+      {statisticsOpen && workspace.activeProject && (
+        <ProjectStatisticsModal project={workspace.activeProject} onClose={() => setStatisticsOpen(false)} />
       )}
       {notice && <div className="toast" role="status">{notice}</div>}
     </div>

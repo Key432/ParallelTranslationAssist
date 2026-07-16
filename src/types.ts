@@ -12,6 +12,7 @@ export type Project = {
   status: ProjectStatus
   source: string
   translations: Translation[]
+  updatedAt: string
 }
 
 export type ProjectStatus = '未着手' | '翻訳中' | '初稿完了' | '修正中' | '完了' | '保留'

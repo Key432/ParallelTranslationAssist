@@ -14,6 +14,7 @@ const defaultWorkspace: WorkspaceFixture = {
     status: '翻訳中',
     source: 'Hello world',
     translations: [{ id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' }],
+    updatedAt: '2026-07-16T01:00:00.000Z',
   }],
   activeProjectId: 'project-1',
 }
@@ -49,6 +50,20 @@ describe('App translation editing', () => {
     await waitFor(async () => {
       expect((await loadWorkspaceState()).projects[0].translations[0].translated).toBe('やあ')
     })
+  })
+
+  test('opens a visual summary of the current project statistics', async () => {
+    await renderApp()
+    fireEvent.click(screen.getByRole('button', { name: 'プロジェクト統計を表示' }))
+
+    const dialog = screen.getByRole('dialog', { name: '統計' })
+    expect(dialog).toBeInTheDocument()
+    expect(within(dialog).getByLabelText('翻訳済み 45.5%')).toBeInTheDocument()
+    expect(within(dialog).getByText('原文文字数')).toBeInTheDocument()
+    expect(within(dialog).getByText(/2026年7月16日/)).toBeInTheDocument()
+
+    fireEvent.click(within(dialog).getByRole('button', { name: '統計を閉じる' }))
+    expect(screen.queryByRole('dialog', { name: '統計' })).not.toBeInTheDocument()
   })
 
   test('automatically edits a translation when the selected range matches exactly', async () => {
@@ -88,6 +103,7 @@ describe('App translation editing', () => {
           { id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
           { id: 'translation-2', start: 6, end: 11, source: 'world', translated: '世界' },
         ],
+        updatedAt: '2026-07-16T01:00:00.000Z',
       }],
       activeProjectId: 'project-1',
     })
@@ -112,6 +128,7 @@ describe('App translation editing', () => {
           { id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
           { id: 'translation-2', start: 6, end: 11, source: 'world', translated: '世界' },
         ],
+        updatedAt: '2026-07-16T01:00:00.000Z',
       }],
       activeProjectId: 'project-1',
     })
@@ -145,6 +162,7 @@ describe('App translation editing', () => {
           { id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
           { id: 'translation-2', start: 6, end: 11, source: 'world', translated: '世界' },
         ],
+        updatedAt: '2026-07-16T01:00:00.000Z',
       }],
       activeProjectId: 'project-1',
     })
@@ -192,6 +210,7 @@ describe('App translation editing', () => {
           { id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
           { id: 'translation-2', start: 6, end: 11, source: 'world', translated: '世界' },
         ],
+        updatedAt: '2026-07-16T01:00:00.000Z',
       }],
       activeProjectId: 'project-1',
     })
@@ -256,6 +275,7 @@ describe('App translation editing', () => {
     const importedProject = {
       id: 'imported', title: 'Imported project', status: '完了' as const, source: 'Imported source',
       translations: [{ id: 'imported-translation', start: 0, end: 8, source: 'Imported', translated: 'インポート済み' }],
+      updatedAt: '2026-07-16T01:00:00.000Z',
     }
     const file = new File([serializeProject(importedProject)], 'project.json', { type: 'application/json' })
     Object.defineProperty(file, 'text', { value: () => Promise.resolve(serializeProject(importedProject)) })

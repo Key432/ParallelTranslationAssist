@@ -21,6 +21,7 @@ type Props = {
   canRedo: boolean
   onUndo: () => void
   onRedo: () => void
+  onOpenStatistics: () => void
   onCaptureSelection: () => void
   onDraftChange: (draft: string) => void
   onSaveTranslation: () => void
@@ -46,6 +47,7 @@ export function TranslationWorkspace({
   canRedo,
   onUndo,
   onRedo,
+  onOpenStatistics,
   onCaptureSelection,
   onDraftChange,
   onSaveTranslation,
@@ -69,7 +71,10 @@ export function TranslationWorkspace({
           <p className="eyebrow">TRANSLATION WORKSPACE</p>
           <h1>{title}</h1>
         </div>
-        <p className="intro-help">原文から一文、複数文、または段落を選択し、<br />「選択範囲を翻訳」を押してください。</p>
+        <button className="statistics-button" onClick={onOpenStatistics} aria-label="プロジェクト統計を表示">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 17V9h3v8H3Zm5 0V3h3v14H8Zm5 0v-5h3v5h-3Z" /></svg>
+          <span>統計</span>
+        </button>
       </div>
 
       <div className="editor-grid">

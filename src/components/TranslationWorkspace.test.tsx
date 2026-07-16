@@ -5,6 +5,7 @@ import { TranslationWorkspace } from './TranslationWorkspace'
 describe('TranslationWorkspace', () => {
   test('shows the project title and changes its status', () => {
     const onStatusChange = jest.fn()
+    const onOpenStatistics = jest.fn()
     render(
       <TranslationWorkspace
         title="文学作品A"
@@ -22,6 +23,7 @@ describe('TranslationWorkspace', () => {
         canRedo={false}
         onUndo={jest.fn()}
         onRedo={jest.fn()}
+        onOpenStatistics={onOpenStatistics}
         onCaptureSelection={jest.fn()}
         onDraftChange={jest.fn()}
         onSaveTranslation={jest.fn()}
@@ -36,6 +38,9 @@ describe('TranslationWorkspace', () => {
     expect(status).toHaveValue('翻訳中')
     fireEvent.change(status, { target: { value: '初稿完了' } })
     expect(onStatusChange).toHaveBeenCalledWith('初稿完了')
+    fireEvent.click(screen.getByRole('button', { name: 'プロジェクト統計を表示' }))
+    expect(onOpenStatistics).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText(/原文から一文/)).not.toBeInTheDocument()
   })
 
   test('starts editing an existing translation from its edit button', () => {
@@ -58,6 +63,7 @@ describe('TranslationWorkspace', () => {
         canRedo={false}
         onUndo={jest.fn()}
         onRedo={jest.fn()}
+        onOpenStatistics={jest.fn()}
         onCaptureSelection={jest.fn()}
         onDraftChange={jest.fn()}
         onSaveTranslation={jest.fn()}
@@ -87,6 +93,7 @@ describe('TranslationWorkspace', () => {
         canRedo={false}
         onUndo={jest.fn()}
         onRedo={jest.fn()}
+        onOpenStatistics={jest.fn()}
         onCaptureSelection={jest.fn()}
         onDraftChange={jest.fn()}
         onSaveTranslation={jest.fn()}

@@ -8,6 +8,7 @@ function project(title: string, id = 'project-1'): Project {
     status: '未着手',
     source: 'Hello',
     translations: [{ id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' }],
+    updatedAt: '2026-07-16T01:00:00.000Z',
   }
 }
 
