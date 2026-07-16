@@ -7,11 +7,15 @@ import { ProjectInformationModal } from './components/ProjectInformationModal'
 import { ProjectStatisticsModal } from './components/ProjectStatisticsModal'
 import { Reader } from './components/Reader'
 import { TranslationWorkspace } from './components/TranslationWorkspace'
+import { AiApiKeySettings } from './components/AiApiKeySettings'
 import { calculateTextEdit, findExactTranslation, findOverlappingTranslations, findTranslationsAffectedByEdit, mergeTranslationTexts, reconcileTranslationsAfterEdit, sortTranslations, updateTranslationText } from './domain/translations'
 import type { TextEdit } from './domain/translations'
 import { buildUntranslatedRanges, findNextUntranslatedRange, findPreviousUntranslatedRange } from './domain/untranslatedRanges'
+import { buildAiTranslationRequest } from './domain/aiTranslationInput'
 import { useWorkspace } from './hooks/useWorkspace'
 import { useOutsideClick } from './hooks/useOutsideClick'
+import { useAiApiKey } from './hooks/useAiApiKey'
+import { useAiTranslation } from './hooks/useAiTranslation'
 import type { Project, ProjectInformation, Selection, TextSelectionRange, ViewMode } from './types'
 import { downloadFile } from './services/browserFiles'
 import { buildParallelText, buildTranslationsText, parseProjectFile, safeFileName, serializeProject } from './services/projectTransfer'
@@ -32,6 +36,8 @@ type PendingSourceUpdate = {
 
 function App() {
   const workspace = useWorkspace()
+  const aiApiKey = useAiApiKey()
+  const aiTranslation = useAiTranslation()
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 800)
   const [selection, setSelection] = useState<Selection | null>(null)
   const [draft, setDraft] = useState('')
@@ -44,6 +50,8 @@ function App() {
   const [notice, setNotice] = useState('')
   const [statisticsOpen, setStatisticsOpen] = useState(false)
   const [informationMode, setInformationMode] = useState<'default' | 'title' | null>(null)
+  const [pendingAiReplace, setPendingAiReplace] = useState(false)
+  const [aiSettingsOpen, setAiSettingsOpen] = useState(false)
   const sourceRef = useRef<HTMLTextAreaElement>(null)
   const translationRef = useRef<HTMLTextAreaElement>(null)
   const sidebarRef = useRef<HTMLElement>(null)
@@ -90,6 +98,10 @@ function App() {
     setPendingProjectImport(null)
     setStatisticsOpen(false)
     setInformationMode(null)
+    setPendingAiReplace(false)
+    aiTranslation.clear()
+    // AI候補はプロジェクトをまたいで保持しない。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspace.activeProjectId, endSourceHistoryGroup])
 
   useEffect(() => () => {
@@ -102,13 +114,21 @@ function App() {
     return () => window.clearTimeout(timer)
   }, [notice])
 
+  useEffect(() => {
+    if (aiTranslation.errorCode) aiApiKey.markRequestError(aiTranslation.errorCode)
+  }, [aiTranslation.errorCode])
+
   const selectProject = (id: string) => {
+    if (aiTranslation.suggestion && !window.confirm('表示中のAI下訳候補を破棄してプロジェクトを切り替えますか？')) return
+    aiTranslation.clear()
     workspace.setActiveProjectId(id)
     setView('edit')
     if (window.innerWidth <= 800) setSidebarOpen(false)
   }
 
   const addProject = () => {
+    if (aiTranslation.suggestion && !window.confirm('表示中のAI下訳候補を破棄して新しいプロジェクトを作成しますか？')) return
+    aiTranslation.clear()
     workspace.addProject('New Project')
     setView('edit')
     setNotice('プロジェクトを作成しました')
@@ -180,7 +200,7 @@ function App() {
   }
 
   const navigateUntranslated = (direction: 'previous' | 'next') => {
-    if (draft.length > 0 || editingTranslationId || pendingSourceUpdate) return
+    if (draft.length > 0 || editingTranslationId || pendingSourceUpdate || aiTranslation.loading || aiTranslation.suggestion) return
     const field = sourceRef.current
     const position = selection
       ? (direction === 'next' ? selection.end : selection.start)
@@ -285,6 +305,7 @@ function App() {
     setSelection(null)
     setDraft('')
     setEditingTranslationId(null)
+    aiTranslation.clear()
     setNotice(editingTranslationId ? '訳文を更新しました' : '訳文を登録しました')
   }
 
@@ -453,6 +474,35 @@ function App() {
     downloadFile(`${safeFileName(workspace.activeProject.title)}-parallel.txt`, buildParallelText(workspace.activeProject), 'text/plain;charset=utf-8')
   }
 
+  const createAiSuggestion = () => {
+    if (!workspace.activeProject || !selection || !aiApiKey.apiKey || (aiApiKey.status !== 'available' && !aiTranslation.error)) return
+    try {
+      const input = buildAiTranslationRequest(selection, workspace.activeProject.originalLanguage, workspace.activeProject.translatedLanguage, keywords)
+      void aiTranslation.createSuggestion(aiApiKey.apiKey, input)
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'AI翻訳を実行できませんでした。')
+    }
+  }
+
+  const applyAiSuggestion = () => {
+    if (!aiTranslation.suggestion) return
+    if (draft.length > 0) {
+      setPendingAiReplace(true)
+      return
+    }
+    setDraft(aiTranslation.suggestion.translation)
+    aiTranslation.clearSuggestion()
+    window.setTimeout(() => translationRef.current?.focus(), 0)
+  }
+
+  const confirmAiReplacement = () => {
+    if (!aiTranslation.suggestion) return
+    setDraft(aiTranslation.suggestion.translation)
+    aiTranslation.clearSuggestion()
+    setPendingAiReplace(false)
+    window.setTimeout(() => translationRef.current?.focus(), 0)
+  }
+
   if (!workspace.ready) {
     return <div className="app-loading" role="status">保存データを読み込んでいます…</div>
   }
@@ -464,7 +514,11 @@ function App() {
         hasActiveProject={Boolean(workspace.activeProject)}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
-        onViewChange={setView}
+        onViewChange={(nextView) => {
+          if (nextView !== view && aiTranslation.suggestion && !window.confirm('表示中のAI下訳候補を破棄して画面を切り替えますか？')) return
+          if (nextView !== view) aiTranslation.clear()
+          setView(nextView)
+        }}
         onClear={clearActiveProject}
         transferActions={{
           importSource: importSourceFile,
@@ -484,6 +538,8 @@ function App() {
           onAdd={addProject}
           onRename={renameProject}
           onDelete={deleteProject}
+          aiStatus={aiApiKey.status}
+          onOpenAiSettings={() => setAiSettingsOpen(true)}
         />
         <main id="top">
           {!workspace.activeProject ? (
@@ -517,7 +573,7 @@ function App() {
               onOpenInformation={(focusTitle = false) => { setStatisticsOpen(false); setInformationMode(focusTitle ? 'title' : 'default') }}
               onCaptureSelection={captureSelection}
               hasUntranslatedRanges={untranslatedRanges.length > 0}
-              untranslatedNavigationDisabled={draft.length > 0 || Boolean(editingTranslationId) || Boolean(pendingSourceUpdate)}
+              untranslatedNavigationDisabled={draft.length > 0 || Boolean(editingTranslationId) || Boolean(pendingSourceUpdate) || aiTranslation.loading || Boolean(aiTranslation.suggestion)}
               onPreviousUntranslated={() => navigateUntranslated('previous')}
               onNextUntranslated={() => navigateUntranslated('next')}
               onDraftChange={setDraft}
@@ -556,6 +612,18 @@ function App() {
                 }))
                 setNotice('訳語キーワードを削除しました')
               }}
+              ai={{
+                loading: aiTranslation.loading,
+                suggestion: aiTranslation.suggestion,
+                error: aiTranslation.error,
+                canGenerate: Boolean(selection) && Boolean(aiApiKey.apiKey) && (aiApiKey.status === 'available' || Boolean(aiTranslation.error)) && !aiTranslation.loading && !pendingSourceUpdate && !pendingDiscard,
+                hasApiKey: Boolean(aiApiKey.apiKey),
+                onGenerate: createAiSuggestion,
+                onCancel: aiTranslation.cancel,
+                onApply: applyAiSuggestion,
+                onRegenerate: createAiSuggestion,
+                onClose: aiTranslation.clearSuggestion,
+              }}
             />
           ) : (
             <Reader
@@ -571,7 +639,7 @@ function App() {
           )}
         </main>
       </div>
-      <footer><span>PARALLEL TRANSLATION ASSIST</span><span>Private workspace · Data stays in this browser</span></footer>
+      <footer><span>PARALLEL TRANSLATION ASSIST</span><span>Project data stays in this browser · AI sends selected text only</span></footer>
       {pendingDiscard && (
         <ConfirmationModal
           count={pendingDiscard.translationIds.length}
@@ -608,6 +676,26 @@ function App() {
           onCancel={() => setPendingProjectImport(null)}
           onConfirm={() => applyProjectImport(pendingProjectImport)}
           confirmLabel="続ける"
+        />
+      )}
+      {pendingAiReplace && (
+        <ConfirmationModal
+          title="入力中の訳文を置き換えますか？"
+          description="入力中の訳文をAIの下訳候補で置き換えますか？"
+          onCancel={() => setPendingAiReplace(false)}
+          onConfirm={confirmAiReplacement}
+          confirmLabel="置き換える"
+        />
+      )}
+      {aiSettingsOpen && (
+        <AiApiKeySettings
+          apiKey={aiApiKey.apiKey}
+          status={aiApiKey.status}
+          model={aiApiKey.model}
+          onApiKeyChange={aiApiKey.setApiKey}
+          onCheckConnection={() => { void aiApiKey.checkConnection() }}
+          onClearApiKey={() => { aiApiKey.clearApiKey(); aiTranslation.clear() }}
+          onClose={() => setAiSettingsOpen(false)}
         />
       )}
       {statisticsOpen && workspace.activeProject && (

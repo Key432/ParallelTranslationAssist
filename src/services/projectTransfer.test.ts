@@ -23,6 +23,12 @@ describe('project transfer', () => {
     expect(parseProjectFile(serializeProject(project))).toEqual(project)
   })
 
+  test('never exports an accidental API key field', () => {
+    const contaminated = { ...project, apiKey: 'test-api-key' }
+    expect(serializeProject(contaminated)).not.toContain('test-api-key')
+    expect(serializeProject(contaminated)).not.toContain('apiKey')
+  })
+
   test('rejects invalid and unsupported project files', () => {
     expect(() => parseProjectFile('{broken')).toThrow('JSONファイルを読み取れませんでした。')
     expect(() => parseProjectFile(JSON.stringify({ format: 'other', version: 1, project }))).toThrow('対応していない')

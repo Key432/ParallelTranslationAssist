@@ -15,6 +15,21 @@ const informationProps = {
   untranslatedNavigationDisabled: false,
   onPreviousUntranslated: jest.fn(),
   onNextUntranslated: jest.fn(),
+  ai: {
+    loading: false,
+    suggestion: null,
+    error: '',
+    canGenerate: false,
+    hasApiKey: false,
+    onApiKeyChange: jest.fn(),
+    onCheckConnection: jest.fn(),
+    onClearApiKey: jest.fn(),
+    onGenerate: jest.fn(),
+    onCancel: jest.fn(),
+    onApply: jest.fn(),
+    onRegenerate: jest.fn(),
+    onClose: jest.fn(),
+  },
 }
 
 describe('TranslationWorkspace', () => {
@@ -64,6 +79,14 @@ describe('TranslationWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'タイトルを編集: 文学作品A' }))
     expect(onOpenInformation).toHaveBeenCalledWith(true)
     expect(screen.queryByText(/原文から一文/)).not.toBeInTheDocument()
+    const footerTools = screen.getByRole('button', { name: '訳文の記法を確認' }).parentElement
+    expect(footerTools).toHaveClass('translation-footer-tools')
+    expect(footerTools?.querySelectorAll('button')).toHaveLength(3)
+    expect(Array.from(footerTools?.querySelectorAll('button') ?? []).map((button) => button.getAttribute('aria-label'))).toEqual([
+      '訳文の記法を確認',
+      'AIで下訳を作成',
+      'キーワード追加',
+    ])
   })
 
   test('starts editing an existing translation from its edit button', () => {

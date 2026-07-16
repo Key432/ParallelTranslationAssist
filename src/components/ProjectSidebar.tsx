@@ -1,5 +1,5 @@
 import { useState, type Ref } from 'react'
-import type { Project } from '../types'
+import type { AiConnectionStatus, Project } from '../types'
 
 type Props = {
   projects: Project[]
@@ -10,9 +10,11 @@ type Props = {
   onAdd: () => void
   onRename: (id: string, title: string) => void
   onDelete: (project: Project) => void
+  aiStatus: AiConnectionStatus
+  onOpenAiSettings: () => void
 }
 
-export function ProjectSidebar({ projects, open, sidebarRef, activeProjectId, onSelect, onAdd, onRename, onDelete }: Props) {
+export function ProjectSidebar({ projects, open, sidebarRef, activeProjectId, onSelect, onAdd, onRename, onDelete, aiStatus, onOpenAiSettings }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
 
@@ -71,7 +73,13 @@ export function ProjectSidebar({ projects, open, sidebarRef, activeProjectId, on
         ))}
         {projects.length === 0 && <p className="no-projects">プロジェクトがありません。<br />＋ボタンから作成できます。</p>}
       </div>
-      <p className="sidebar-note">すべての内容は、このブラウザにのみ保存されます。</p>
+      <div className="sidebar-bottom">
+        <button type="button" className="sidebar-ai-settings" onClick={onOpenAiSettings}>
+          <span className="sidebar-ai-icon" aria-hidden="true">✦</span>
+          <span><strong>AI翻訳支援</strong><small>{aiStatus === 'available' ? '利用可能' : '設定・注意事項'}</small></span>
+        </button>
+        <p className="sidebar-note">通常のプロジェクトデータは、このブラウザにのみ保存されます。</p>
+      </div>
     </aside>
   )
 }

@@ -151,13 +151,138 @@ test('navigates untranslated ranges in both directions, wraps, focuses input, an
   await expect(previous).toBeDisabled()
 })
 
+test('creates an AI draft by sending only the selected source and matching glossary to mocked OpenAI endpoints', async ({ page }) => {
+  let receivedRequest: Record<string, unknown> | null = null
+  let receivedHeaders: Record<string, string> = {}
+  let translationCalls = 0
+  await page.route('https://api.openai.com/v1/**', async (route) => {
+    const request = route.request()
+    if (request.url().endsWith('/models')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ object: 'list', data: [{ id: 'gpt-5-mini' }] }) })
+      return
+    }
+    translationCalls += 1
+    receivedRequest = request.postDataJSON() as Record<string, unknown>
+    receivedHeaders = request.headers()
+    if (translationCalls === 1) {
+      await route.fulfill({ status: 429, contentType: 'application/json', body: JSON.stringify({ error: { code: 'insufficient_quota', message: 'quota exceeded' } }) })
+      return
+    }
+    await new Promise((resolve) => setTimeout(resolve, 120))
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'x-request-id': 'mock-request' },
+      body: JSON.stringify({ output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({ translation: '選択された兎です。', warnings: ['前後関係がないため主語を特定できません。'] }) }] }] }),
+    })
+  })
+
+  const aiButton = page.getByRole('button', { name: 'AIで下訳を作成' })
+  const helpButton = page.getByRole('button', { name: '訳文の記法を確認' })
+  const footerKeywordButton = page.getByRole('button', { name: 'キーワード追加' })
+  await aiButton.hover()
+  await expect(page.getByText('APIキーを設定して使用')).toBeVisible()
+  const [helpBox, aiBox, keywordBox] = await Promise.all([helpButton.boundingBox(), aiButton.boundingBox(), footerKeywordButton.boundingBox()])
+  if (!helpBox || !aiBox || !keywordBox) throw new Error('訳文フッターの操作ボタン位置を取得できませんでした。')
+  expect(helpBox.x).toBeLessThan(aiBox.x)
+  expect(aiBox.x).toBeLessThan(keywordBox.x)
+  expect(Math.abs(helpBox.y - aiBox.y)).toBeLessThan(2)
+  expect(Math.abs(aiBox.y - keywordBox.y)).toBeLessThan(2)
+
+  await page.getByRole('button', { name: /AI翻訳支援/ }).click()
+  const settings = page.getByRole('dialog', { name: 'AI翻訳支援' })
+  await settings.getByLabel('OpenAI APIキー').fill('test-api-key')
+  await settings.getByRole('button', { name: '接続を確認' }).click()
+  await expect(settings.getByText(/接続状態: 利用可能/)).toBeVisible()
+  await settings.getByRole('button', { name: 'AI翻訳支援の設定を閉じる' }).click()
+
+  const addProject = page.getByRole('button', { name: '新しいプロジェクトを作成' })
+  if (!await addProject.isVisible()) await page.getByRole('button', { name: 'プロジェクト一覧を開く' }).click()
+  await addProject.click()
+  await page.getByRole('button', { name: /AI翻訳支援/ }).click()
+  await expect(page.getByLabel('OpenAI APIキー')).toHaveValue('test-api-key')
+  await expect(page.getByText(/接続状態: 利用可能/)).toBeVisible()
+  await page.getByRole('button', { name: 'AI翻訳支援の設定を閉じる' }).click()
+  const firstProject = page.getByRole('button', { name: /はじめてのプロジェクト/ })
+  if (!await firstProject.isVisible()) await page.getByRole('button', { name: 'プロジェクト一覧を開く' }).click()
+  await firstProject.click()
+
+  const sourceText = 'Before garden.\n\nSelected rabbit.\n\nAfter garden.'
+  const selectedText = 'Selected rabbit.'
+  const source = page.getByRole('textbox', { name: '翻訳する原文' })
+  await source.fill(sourceText)
+
+  const keywordButton = page.getByRole('button', { name: 'キーワード追加' })
+  for (const keyword of [{ source: 'rabbit', translated: '兎' }, { source: 'garden', translated: '庭' }]) {
+    await keywordButton.click()
+    const dialog = page.getByRole('dialog', { name: '訳語キーワード' })
+    await dialog.getByRole('textbox', { name: '原語', exact: true }).fill(keyword.source)
+    await dialog.getByRole('textbox', { name: '訳語', exact: true }).fill(keyword.translated)
+    await dialog.getByRole('button', { name: '登録' }).click()
+    await dialog.getByRole('button', { name: '訳語キーワードを閉じる' }).click()
+  }
+
+  const start = sourceText.indexOf(selectedText)
+  await source.evaluate((element: HTMLTextAreaElement, range) => {
+    element.focus()
+    element.setSelectionRange(range.start, range.end)
+  }, { start, end: start + selectedText.length })
+  await page.getByRole('button', { name: '選択範囲を翻訳 →' }).click()
+  const translation = page.getByRole('textbox', { name: '訳文' })
+  await translation.fill('入力中の訳文')
+
+  await aiButton.click()
+  await expect(page.getByRole('alert')).toHaveText('OpenAI APIの利用上限または残高を確認してください。')
+  await expect(translation).toHaveValue('入力中の訳文')
+  await expect(aiButton).toBeEnabled()
+  await aiButton.click()
+  await expect(page.getByText('下訳を作成しています…')).toBeVisible()
+  await expect(page.getByLabel('AI翻訳支援').getByRole('button', { name: 'キャンセル' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '次の未翻訳 →' })).toBeDisabled()
+  await expect(page.getByText('選択された兎です。')).toBeVisible()
+  const sentInput = JSON.parse(receivedRequest?.input as string)
+  expect(sentInput).toEqual({
+    sourceText: selectedText,
+    sourceLanguage: 'ENGLISH',
+    targetLanguage: 'JAPANESE',
+    glossary: [{ source: 'rabbit', translated: '兎' }],
+  })
+  expect(receivedRequest?.instructions).toContain('原語（source）と使用推奨訳語（translated）のセット')
+  expect(JSON.stringify(sentInput)).not.toContain('Before garden')
+  expect(JSON.stringify(sentInput)).not.toContain('After garden')
+  expect(JSON.stringify(sentInput)).not.toContain('contextBefore')
+  expect(JSON.stringify(sentInput)).not.toContain('contextAfter')
+  expect(JSON.stringify(sentInput)).not.toContain('fullSource')
+  expect(JSON.stringify(receivedRequest)).not.toContain('test-api-key')
+  expect(receivedHeaders.authorization).toBe('Bearer test-api-key')
+  await expect(page.getByText('前後関係がないため主語を特定できません。')).toBeVisible()
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: '訳文欄へ反映' }).click()
+  const replaceDialog = page.getByRole('alertdialog', { name: '入力中の訳文を置き換えますか？' })
+  await replaceDialog.getByRole('button', { name: 'キャンセル' }).click()
+  await expect(translation).toHaveValue('入力中の訳文')
+  await page.getByRole('button', { name: '訳文欄へ反映' }).click()
+  await page.getByRole('alertdialog', { name: '入力中の訳文を置き換えますか？' }).getByRole('button', { name: '置き換える' }).click()
+  await expect(translation).toHaveValue('選択された兎です。')
+  await translation.fill('確認して修正した訳文')
+  await expect(page.getByRole('button', { name: 'この対訳を編集' })).toHaveCount(0)
+  await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
+  await expect(page.getByText('確認して修正した訳文', { exact: true })).toBeVisible()
+
+  await page.reload()
+  await page.getByRole('button', { name: 'プロジェクト一覧を開く' }).click()
+  await page.getByRole('button', { name: /AI翻訳支援/ }).click()
+  await expect(page.getByLabel('OpenAI APIキー')).toHaveValue('')
+})
+
 test('registers, updates, displays, and deletes a project keyword', async ({ page }) => {
   const source = page.getByRole('textbox', { name: '翻訳する原文' })
   await source.fill('Translation translates translation.')
 
   const addButton = page.getByRole('button', { name: 'キーワード追加' })
   await addButton.hover()
-  await expect(page.locator('.translation-keyword-tooltip')).toBeVisible()
+  await expect(addButton.locator('.translation-keyword-tooltip')).toBeVisible()
   await addButton.click()
 
   const dialog = page.getByRole('dialog', { name: '訳語キーワード' })

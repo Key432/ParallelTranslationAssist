@@ -10,9 +10,10 @@ type Props = {
   sourceRef: RefObject<HTMLTextAreaElement | null>
   onSourceChange: (source: string, selection: TextSelectionRange) => void
   onBlur?: () => void
+  readOnly?: boolean
 }
 
-export function SourceEditor({ source, translations, keywords = [], selection = null, sourceRef, onSourceChange, onBlur }: Props) {
+export function SourceEditor({ source, translations, keywords = [], selection = null, sourceRef, onSourceChange, onBlur, readOnly = false }: Props) {
   const editorRef = useRef<HTMLDivElement>(null)
   const highlightRef = useRef<HTMLDivElement>(null)
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null)
@@ -73,6 +74,7 @@ export function SourceEditor({ source, translations, keywords = [], selection = 
         onMouseMove={updateKeywordTooltip}
         onMouseLeave={() => setTooltip(null)}
         onBlur={onBlur}
+        readOnly={readOnly}
         placeholder="翻訳したい英文をここに貼り付けます…"
         aria-label="翻訳する原文"
         spellCheck

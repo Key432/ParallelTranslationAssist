@@ -58,4 +58,24 @@ export type TextRange = {
   end: number
 }
 
+export type AiTranslationGlossaryEntry = {
+  source: string
+  translated: string
+}
+
+export type AiTranslationRequest = {
+  sourceText: string
+  sourceLanguage: ProjectLanguage
+  targetLanguage: ProjectLanguage
+  glossary: AiTranslationGlossaryEntry[]
+}
+
+export type AiTranslationResponse = {
+  translation: string
+  warnings: string[]
+  requestId?: string
+}
+
+export type AiConnectionStatus = 'empty' | 'unchecked' | 'checking' | 'available' | 'invalid' | 'quota' | 'error'
+
 export type ViewMode = 'edit' | 'read'

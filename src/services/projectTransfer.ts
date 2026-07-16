@@ -52,11 +52,24 @@ function isImportedProject(value: unknown): value is Omit<Project, 'updatedAt'> 
 }
 
 export function serializeProject(project: Project): string {
+  const exportedProject: Project = {
+    id: project.id,
+    title: project.title,
+    author: project.author,
+    sourceUrl: project.sourceUrl,
+    originalLanguage: project.originalLanguage,
+    translatedLanguage: project.translatedLanguage,
+    status: project.status,
+    source: project.source,
+    translations: project.translations,
+    keywords: project.keywords,
+    updatedAt: project.updatedAt,
+  }
   const file: ProjectFile = {
     format: PROJECT_FILE_FORMAT,
     version: PROJECT_FILE_VERSION,
     exportedAt: new Date().toISOString(),
-    project,
+    project: exportedProject,
   }
   return JSON.stringify(file, null, 2)
 }

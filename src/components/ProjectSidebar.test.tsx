@@ -13,6 +13,8 @@ describe('ProjectSidebar', () => {
         onAdd={jest.fn()}
         onRename={jest.fn()}
         onDelete={jest.fn()}
+        aiStatus="empty"
+        onOpenAiSettings={jest.fn()}
       />,
     )
 
@@ -32,6 +34,8 @@ describe('ProjectSidebar', () => {
         onAdd={onAdd}
         onRename={jest.fn()}
         onDelete={jest.fn()}
+        aiStatus="empty"
+        onOpenAiSettings={jest.fn()}
       />,
     )
 

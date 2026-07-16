@@ -7,6 +7,21 @@ import { TranslationMarkupHelpModal } from './TranslationMarkupHelpModal'
 import { TranslationKeywordModal } from './TranslationKeywordModal'
 import { RegisteredTranslations } from './RegisteredTranslations'
 import { UntranslatedNavigation } from './UntranslatedNavigation'
+import { AiTranslationButton, AiTranslationSuggestion } from './AiTranslationSuggestion'
+import type { AiTranslationResponse } from '../types'
+
+export type AiWorkspaceProps = {
+  loading: boolean
+  suggestion: AiTranslationResponse | null
+  error: string
+  canGenerate: boolean
+  hasApiKey: boolean
+  onGenerate: () => void
+  onCancel: () => void
+  onApply: () => void
+  onRegenerate: () => void
+  onClose: () => void
+}
 
 type Props = {
   title: string
@@ -46,6 +61,7 @@ type Props = {
   onAddKeyword: (source: string, translated: string) => void
   onUpdateKeyword: (id: string, source: string, translated: string) => void
   onDeleteKeyword: (id: string) => void
+  ai: AiWorkspaceProps
 }
 
 export function TranslationWorkspace({
@@ -86,6 +102,7 @@ export function TranslationWorkspace({
   onAddKeyword,
   onUpdateKeyword,
   onDeleteKeyword,
+  ai,
 }: Props) {
   const [markupHelpOpen, setMarkupHelpOpen] = useState(false)
   const [keywordModalOpen, setKeywordModalOpen] = useState(false)
@@ -130,7 +147,7 @@ export function TranslationWorkspace({
             <div><span className="step">01</span><h2>原文</h2><span className="lang">{originalLanguage}</span></div>
             <span className="count">{source.length.toLocaleString()} 字</span>
           </div>
-          <SourceEditor source={source} translations={translations} keywords={keywords} selection={highlightedSelection ?? selection} sourceRef={sourceRef} onSourceChange={onSourceChange} onBlur={onSourceBlur} />
+          <SourceEditor source={source} translations={translations} keywords={keywords} selection={highlightedSelection ?? selection} sourceRef={sourceRef} onSourceChange={onSourceChange} onBlur={onSourceBlur} readOnly={ai.loading || Boolean(ai.suggestion)} />
           <div className="panel-footer source-footer">
             <div className="source-footer-actions">
               <UntranslatedNavigation
@@ -139,7 +156,7 @@ export function TranslationWorkspace({
                 onPrevious={onPreviousUntranslated}
                 onNext={onNextUntranslated}
               />
-              <button className="primary" onClick={onCaptureSelection}>選択範囲を翻訳 <span>→</span></button>
+              <button className="primary" disabled={ai.loading || Boolean(ai.suggestion)} onClick={onCaptureSelection}>選択範囲を翻訳 <span>→</span></button>
             </div>
           </div>
         </article>
@@ -149,34 +166,40 @@ export function TranslationWorkspace({
             <div><span className="step">02</span><h2>訳文</h2><span className="lang">{translatedLanguage}</span></div>
             <span className="count">{translations.length} 件</span>
           </div>
-          {selection ? (
-            <div className="translation-form">
-              <blockquote><span>{editingTranslationId ? '編集中の原文' : '選択した原文'}</span>{selection.text}</blockquote>
-              <textarea
-                ref={translationRef}
-                value={draft}
-                onChange={(event) => onDraftChange(event.target.value)}
-                placeholder="訳文を入力します…"
-                aria-label="訳文"
-                onKeyDown={(event) => {
-                  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') onSaveTranslation()
-                }}
-              />
-            </div>
-          ) : (
-            <div className="empty-state">
-              <span className="selection-icon">Aa</span>
-              <strong>原文を選択してください</strong>
-              <p>一文から段落まで、好きな長さで<br />訳文を紐づけられます。</p>
-            </div>
-          )}
-          <button className="translation-keyword-button" onClick={() => setKeywordModalOpen(true)} aria-label="キーワード追加">
-            <span aria-hidden="true">+</span><span className="translation-keyword-tooltip">キーワード追加</span>
-          </button>
+          <div className="translation-content">
+            {selection ? (
+              <div className="translation-form">
+                <blockquote><span>{editingTranslationId ? '編集中の原文' : '選択した原文'}</span>{selection.text}</blockquote>
+                <textarea
+                  ref={translationRef}
+                  value={draft}
+                  onChange={(event) => onDraftChange(event.target.value)}
+                  placeholder="訳文を入力します…"
+                  aria-label="訳文"
+                  onKeyDown={(event) => {
+                    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') onSaveTranslation()
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="empty-state">
+                <span className="selection-icon">Aa</span>
+                <strong>原文を選択してください</strong>
+                <p>一文から段落まで、好きな長さで<br />訳文を紐づけられます。</p>
+              </div>
+            )}
+            <AiTranslationSuggestion {...ai} />
+          </div>
           <div className="panel-footer translation-footer">
-            <button className="translation-help-button" onClick={() => setMarkupHelpOpen(true)} aria-label="訳文の記法を確認">?</button>
+            <div className="translation-footer-tools">
+              <button className="translation-help-button footer-tool-button" onClick={() => setMarkupHelpOpen(true)} aria-label="訳文の記法を確認">?</button>
+              <AiTranslationButton loading={ai.loading} error={ai.error} canGenerate={ai.canGenerate} hasApiKey={ai.hasApiKey} onGenerate={ai.onGenerate} />
+              <button className="translation-keyword-button footer-tool-button" onClick={() => setKeywordModalOpen(true)} aria-label="キーワード追加">
+                <span aria-hidden="true">+</span><span className="translation-keyword-tooltip">キーワード追加</span>
+              </button>
+            </div>
             <div className="translation-footer-actions">
-              {selection && <button className="text-button" onClick={onCancelSelection}>キャンセル</button>}
+              {selection && <button className="text-button" disabled={ai.loading || Boolean(ai.suggestion) || Boolean(draft)} onClick={onCancelSelection}>キャンセル</button>}
               <button className="primary" disabled={!selection || !draft.trim()} onClick={onSaveTranslation}>訳文を登録 <span>⌘↵</span></button>
             </div>
           </div>
