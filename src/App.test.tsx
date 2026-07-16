@@ -1,11 +1,13 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { IDBFactory } from 'fake-indexeddb'
 import App from './App'
 import { loadWorkspaceState, saveWorkspaceState } from './services/workspaceStorage'
 import { serializeProject } from './services/projectTransfer'
-import type { WorkspaceState } from './types'
+import type { ProjectHistory, WorkspaceState } from './types'
 
-const defaultWorkspace: WorkspaceState = {
+type WorkspaceFixture = Omit<WorkspaceState, 'histories'> & { histories?: Record<string, ProjectHistory> }
+
+const defaultWorkspace: WorkspaceFixture = {
   projects: [{
     id: 'project-1',
     title: 'Project',
@@ -16,10 +18,11 @@ const defaultWorkspace: WorkspaceState = {
   activeProjectId: 'project-1',
 }
 
-async function renderApp(state: WorkspaceState = defaultWorkspace) {
-  await saveWorkspaceState(state)
-  render(<App />)
+async function renderApp(state: WorkspaceFixture = defaultWorkspace) {
+  await saveWorkspaceState({ ...state, histories: state.histories ?? {} })
+  const result = render(<App />)
   await screen.findByRole('textbox', { name: '翻訳する原文' })
+  return result
 }
 
 describe('App translation editing', () => {
@@ -265,5 +268,138 @@ describe('App translation editing', () => {
     expect(screen.getByRole('combobox', { name: 'プロジェクトステータス' })).toHaveValue('完了')
     expect(screen.getByRole('textbox', { name: '翻訳する原文' })).toHaveValue('Imported source')
     expect(screen.getByText('インポート済み')).toBeInTheDocument()
+  })
+
+  test('undoes and redoes a project change', async () => {
+    await renderApp()
+    const status = screen.getByRole('combobox', { name: 'プロジェクトステータス' })
+    const undo = screen.getByRole('button', { name: '変更を元に戻す' })
+    const redo = screen.getByRole('button', { name: '変更をやり直す' })
+    expect(undo).toBeDisabled()
+    expect(redo).toBeDisabled()
+
+    fireEvent.change(status, { target: { value: '完了' } })
+    expect(undo).toBeEnabled()
+    fireEvent.click(undo)
+    expect(status).toHaveValue('翻訳中')
+    expect(screen.getByRole('status')).toHaveTextContent('変更を元に戻しました')
+    expect(redo).toBeEnabled()
+
+    fireEvent.click(redo)
+    expect(status).toHaveValue('完了')
+    expect(screen.getByRole('status')).toHaveTextContent('変更をやり直しました')
+  })
+
+  test('resets translation editing state when undoing', async () => {
+    await renderApp()
+    fireEvent.change(screen.getByRole('combobox', { name: 'プロジェクトステータス' }), { target: { value: '完了' } })
+    fireEvent.click(screen.getByRole('button', { name: 'この対訳を編集' }))
+    expect(screen.getByRole('textbox', { name: '訳文' })).toHaveValue('こんにちは')
+
+    fireEvent.click(screen.getByRole('button', { name: '変更を元に戻す' }))
+
+    expect(screen.queryByRole('textbox', { name: '訳文' })).not.toBeInTheDocument()
+    expect(screen.queryByText('編集中の原文')).not.toBeInTheDocument()
+  })
+
+  test('groups consecutive source input into one history entry', async () => {
+    await renderApp()
+    const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' })
+    fireEvent.change(sourceText, { target: { value: 'Hello world1' } })
+    fireEvent.change(sourceText, { target: { value: 'Hello world12' } })
+
+    fireEvent.click(screen.getByRole('button', { name: '変更を元に戻す' }))
+
+    expect(sourceText).toHaveValue('Hello world')
+    expect(screen.getByRole('button', { name: '変更を元に戻す' })).toBeDisabled()
+  })
+
+  test('starts a new source history entry after 800 milliseconds', async () => {
+    await renderApp()
+    jest.useFakeTimers()
+    try {
+      const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' })
+      fireEvent.change(sourceText, { target: { value: 'Hello world1' } })
+      act(() => { jest.advanceTimersByTime(800) })
+      fireEvent.change(sourceText, { target: { value: 'Hello world12' } })
+
+      fireEvent.click(screen.getByRole('button', { name: '変更を元に戻す' }))
+
+      expect(sourceText).toHaveValue('Hello world1')
+      expect(screen.getByRole('button', { name: '変更を元に戻す' })).toBeEnabled()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('ends a source history entry when the source field loses focus', async () => {
+    await renderApp()
+    const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' })
+    fireEvent.change(sourceText, { target: { value: 'Hello world1' } })
+    fireEvent.blur(sourceText)
+    fireEvent.change(sourceText, { target: { value: 'Hello world12' } })
+
+    fireEvent.click(screen.getByRole('button', { name: '変更を元に戻す' }))
+
+    expect(sourceText).toHaveValue('Hello world1')
+  })
+
+  test('does not record a canceled source update', async () => {
+    await renderApp()
+    fireEvent.change(screen.getByRole('textbox', { name: '翻訳する原文' }), { target: { value: 'Hallo world' } })
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'キャンセル' }))
+    expect(screen.getByRole('button', { name: '変更を元に戻す' })).toBeDisabled()
+  })
+
+  test('restores persisted history after reloading the app', async () => {
+    const firstRender = await renderApp()
+    fireEvent.change(screen.getByRole('combobox', { name: 'プロジェクトステータス' }), { target: { value: '完了' } })
+    await waitFor(async () => {
+      expect((await loadWorkspaceState()).histories['project-1'].past).toHaveLength(1)
+    })
+    firstRender.unmount()
+
+    render(<App />)
+    await screen.findByRole('textbox', { name: '翻訳する原文' })
+    fireEvent.click(screen.getByRole('button', { name: '変更を元に戻す' }))
+    expect(screen.getByRole('combobox', { name: 'プロジェクトステータス' })).toHaveValue('翻訳中')
+  })
+
+  test('restores persisted redo history after reloading the app', async () => {
+    const firstRender = await renderApp()
+    fireEvent.change(screen.getByRole('combobox', { name: 'プロジェクトステータス' }), { target: { value: '完了' } })
+    fireEvent.click(screen.getByRole('button', { name: '変更を元に戻す' }))
+    await waitFor(async () => {
+      expect((await loadWorkspaceState()).histories['project-1'].future).toHaveLength(1)
+    })
+    firstRender.unmount()
+
+    render(<App />)
+    await screen.findByRole('textbox', { name: '翻訳する原文' })
+    const redo = screen.getByRole('button', { name: '変更をやり直す' })
+    expect(redo).toBeEnabled()
+    fireEvent.click(redo)
+    expect(screen.getByRole('combobox', { name: 'プロジェクトステータス' })).toHaveValue('完了')
+  })
+
+  test('removes project history when deleting the project', async () => {
+    await renderApp()
+    fireEvent.change(screen.getByRole('combobox', { name: 'プロジェクトステータス' }), { target: { value: '完了' } })
+    await waitFor(async () => {
+      expect((await loadWorkspaceState()).histories['project-1'].past).toHaveLength(1)
+    })
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(true)
+
+    fireEvent.click(screen.getByRole('button', { name: '「Project」を削除' }))
+
+    await waitFor(async () => {
+      expect(await loadWorkspaceState()).toMatchObject({ projects: [], histories: {} })
+    })
+    confirm.mockRestore()
+  })
+
+  test('does not show the removed local save indicator', async () => {
+    await renderApp()
+    expect(screen.queryByText('端末内に保存')).not.toBeInTheDocument()
   })
 })

@@ -16,9 +16,17 @@ export type Project = {
 
 export type ProjectStatus = '未着手' | '翻訳中' | '初稿完了' | '修正中' | '完了' | '保留'
 
+export type ProjectSnapshot = Pick<Project, 'title' | 'status' | 'source' | 'translations'>
+
+export type ProjectHistory = {
+  past: ProjectSnapshot[]
+  future: ProjectSnapshot[]
+}
+
 export type WorkspaceState = {
   projects: Project[]
   activeProjectId: string | null
+  histories: Record<string, ProjectHistory>
 }
 
 export type Selection = {

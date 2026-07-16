@@ -35,7 +35,6 @@ export function AppHeader({ view, hasActiveProject, sidebarOpen, onToggleSidebar
       </nav>
       <div className="header-meta">
         <ProjectTransferControls actions={transferActions} disabled={!hasActiveProject} />
-        <span><i className="status-dot" />端末内に保存</span>
         {hasActiveProject && <button className="text-button danger" onClick={onClear}>この内容を消去</button>}
       </div>
     </header>

@@ -43,6 +43,27 @@ function App() {
   const translationRef = useRef<HTMLTextAreaElement>(null)
   const sidebarRef = useRef<HTMLElement>(null)
   const approvedSourceKeepIds = useRef(new Set<string>())
+  const sourceHistoryActive = useRef(false)
+  const sourceHistoryTimer = useRef<number | null>(null)
+
+  const endSourceHistoryGroup = useCallback(() => {
+    if (sourceHistoryTimer.current !== null) window.clearTimeout(sourceHistoryTimer.current)
+    sourceHistoryTimer.current = null
+    sourceHistoryActive.current = false
+    approvedSourceKeepIds.current.clear()
+  }, [])
+
+  const continueSourceHistoryGroup = useCallback(() => {
+    const recordHistory = !sourceHistoryActive.current
+    sourceHistoryActive.current = true
+    if (sourceHistoryTimer.current !== null) window.clearTimeout(sourceHistoryTimer.current)
+    sourceHistoryTimer.current = window.setTimeout(() => {
+      sourceHistoryTimer.current = null
+      sourceHistoryActive.current = false
+      approvedSourceKeepIds.current.clear()
+    }, 800)
+    return recordHistory
+  }, [])
 
   const source = workspace.activeProject?.source ?? ''
   const translations = workspace.activeProject?.translations ?? []
@@ -52,6 +73,7 @@ function App() {
   useOutsideClick(sidebarRef, closeSidebar, sidebarOpen, '[data-sidebar-toggle]')
 
   useEffect(() => {
+    endSourceHistoryGroup()
     setSelection(null)
     setDraft('')
     setEditingTranslationId(null)
@@ -60,7 +82,11 @@ function App() {
     approvedSourceKeepIds.current.clear()
     setPendingTextImport(null)
     setPendingProjectImport(null)
-  }, [workspace.activeProjectId])
+  }, [workspace.activeProjectId, endSourceHistoryGroup])
+
+  useEffect(() => () => {
+    if (sourceHistoryTimer.current !== null) window.clearTimeout(sourceHistoryTimer.current)
+  }, [])
 
   useEffect(() => {
     if (!notice) return
@@ -240,7 +266,11 @@ function App() {
 
   const applySourceUpdate = (nextSource: string, edit: TextEdit, strategy: 'discard' | 'keep') => {
     const nextTranslations = reconcileTranslationsAfterEdit(nextSource, edit, translations, strategy)
-    workspace.updateActiveProject((project) => ({ ...project, source: nextSource, translations: nextTranslations }))
+    const recordHistory = continueSourceHistoryGroup()
+    workspace.updateActiveProject(
+      (project) => ({ ...project, source: nextSource, translations: nextTranslations }),
+      { recordHistory },
+    )
 
     if (editingTranslationId) {
       const updatedEditing = nextTranslations.find((translation) => translation.id === editingTranslationId)
@@ -274,6 +304,7 @@ function App() {
 
   const cancelSourceUpdate = () => {
     setPendingSourceUpdate(null)
+    endSourceHistoryGroup()
     window.setTimeout(() => sourceRef.current?.focus(), 0)
   }
 
@@ -299,6 +330,25 @@ function App() {
     setEditingTranslationId(null)
     setPendingDiscard(null)
     setPendingSourceUpdate(null)
+    setPendingTextImport(null)
+    setPendingProjectImport(null)
+    approvedSourceKeepIds.current.clear()
+  }
+
+  const undoChange = () => {
+    if (!workspace.canUndo) return
+    endSourceHistoryGroup()
+    workspace.undoActiveProject()
+    resetTranslationForm()
+    setNotice('変更を元に戻しました')
+  }
+
+  const redoChange = () => {
+    if (!workspace.canRedo) return
+    endSourceHistoryGroup()
+    workspace.redoActiveProject()
+    resetTranslationForm()
+    setNotice('変更をやり直しました')
   }
 
   const applyTextImport = (contents: string, mode: 'overwrite' | 'append') => {
@@ -403,8 +453,12 @@ function App() {
               sourceRef={sourceRef}
               translationRef={translationRef}
               onSourceChange={updateSource}
-              onSourceBlur={() => approvedSourceKeepIds.current.clear()}
+              onSourceBlur={() => { if (!pendingSourceUpdate) endSourceHistoryGroup() }}
               onStatusChange={(status) => workspace.updateActiveProject((project) => ({ ...project, status }))}
+              canUndo={workspace.canUndo}
+              canRedo={workspace.canRedo}
+              onUndo={undoChange}
+              onRedo={redoChange}
               onCaptureSelection={captureSelection}
               onDraftChange={setDraft}
               onSaveTranslation={saveTranslation}

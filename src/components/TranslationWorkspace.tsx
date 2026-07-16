@@ -1,6 +1,7 @@
 import type { RefObject } from 'react'
 import { PROJECT_STATUSES } from '../domain/projects'
 import type { ProjectStatus, Selection, Translation } from '../types'
+import { HistoryControls } from './HistoryControls'
 import { SourceEditor } from './SourceEditor'
 
 type Props = {
@@ -16,6 +17,10 @@ type Props = {
   onSourceChange: (source: string) => void
   onSourceBlur?: () => void
   onStatusChange: (status: ProjectStatus) => void
+  canUndo: boolean
+  canRedo: boolean
+  onUndo: () => void
+  onRedo: () => void
   onCaptureSelection: () => void
   onDraftChange: (draft: string) => void
   onSaveTranslation: () => void
@@ -37,6 +42,10 @@ export function TranslationWorkspace({
   onSourceChange,
   onSourceBlur,
   onStatusChange,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
   onCaptureSelection,
   onDraftChange,
   onSaveTranslation,
@@ -48,12 +57,15 @@ export function TranslationWorkspace({
     <section className="workspace" aria-label="翻訳編集">
       <div className="intro">
         <div>
-          <label className="status-control">
-            <span>STATUS</span>
-            <select value={status} onChange={(event) => onStatusChange(event.target.value as ProjectStatus)} aria-label="プロジェクトステータス">
-              {PROJECT_STATUSES.map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
-          </label>
+          <div className="workspace-controls">
+            <label className="status-control">
+              <span>STATUS</span>
+              <select value={status} onChange={(event) => onStatusChange(event.target.value as ProjectStatus)} aria-label="プロジェクトステータス">
+                {PROJECT_STATUSES.map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            </label>
+            <HistoryControls canUndo={canUndo} canRedo={canRedo} onUndo={onUndo} onRedo={onRedo} />
+          </div>
           <p className="eyebrow">TRANSLATION WORKSPACE</p>
           <h1>{title}</h1>
         </div>

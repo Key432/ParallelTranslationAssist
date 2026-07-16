@@ -1,4 +1,5 @@
 import { createProject, normalizeProject } from '../domain/projects'
+import { emptyProjectHistory, normalizeProjectHistory } from '../domain/history'
 import type { WorkspaceState } from '../types'
 
 export const DATABASE_NAME = 'parallel-translation-assist'
@@ -12,7 +13,7 @@ Read the source closely. Select a sentence, a group of sentences, or an entire p
 
 export function createInitialState(): WorkspaceState {
   const project = createProject('はじめてのプロジェクト', SAMPLE)
-  return { projects: [project], activeProjectId: project.id }
+  return { projects: [project], activeProjectId: project.id, histories: { [project.id]: emptyProjectHistory() } }
 }
 
 function openWorkspaceDatabase(factory: IDBFactory): Promise<IDBDatabase> {
@@ -52,7 +53,12 @@ function normalizeWorkspace(value: unknown): WorkspaceState | null {
   const activeProjectId = projects.some((project) => project.id === saved.activeProjectId)
     ? saved.activeProjectId as string
     : projects[0]?.id ?? null
-  return { projects, activeProjectId }
+  const savedHistories = saved.histories && typeof saved.histories === 'object' ? saved.histories : {}
+  const histories = Object.fromEntries(projects.map((project) => [
+    project.id,
+    normalizeProjectHistory((savedHistories as Record<string, unknown>)[project.id]),
+  ]))
+  return { projects, activeProjectId, histories }
 }
 
 export async function loadWorkspaceState(factory: IDBFactory = indexedDB): Promise<WorkspaceState> {
