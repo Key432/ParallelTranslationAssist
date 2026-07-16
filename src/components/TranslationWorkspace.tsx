@@ -1,8 +1,10 @@
-import type { RefObject } from 'react'
+import { useState, type RefObject } from 'react'
 import { PROJECT_STATUSES, projectLanguageLocale } from '../domain/projects'
 import type { ProjectLanguage, ProjectStatus, Selection, Translation } from '../types'
 import { HistoryControls } from './HistoryControls'
+import { FormattedTranslation } from './FormattedTranslation'
 import { SourceEditor } from './SourceEditor'
+import { TranslationMarkupHelpModal } from './TranslationMarkupHelpModal'
 
 type Props = {
   title: string
@@ -67,6 +69,8 @@ export function TranslationWorkspace({
   onEditTranslation,
   onDeleteTranslation,
 }: Props) {
+  const [markupHelpOpen, setMarkupHelpOpen] = useState(false)
+
   return (
     <section className="workspace" aria-label="翻訳編集">
       <div className="intro">
@@ -140,9 +144,12 @@ export function TranslationWorkspace({
               <p>一文から段落まで、好きな長さで<br />訳文を紐づけられます。</p>
             </div>
           )}
-          <div className="panel-footer right">
-            {selection && <button className="text-button" onClick={onCancelSelection}>キャンセル</button>}
-            <button className="primary" disabled={!selection || !draft.trim()} onClick={onSaveTranslation}>訳文を登録 <span>⌘↵</span></button>
+          <div className="panel-footer translation-footer">
+            <button className="translation-help-button" onClick={() => setMarkupHelpOpen(true)} aria-label="訳文の記法を確認">?</button>
+            <div className="translation-footer-actions">
+              {selection && <button className="text-button" onClick={onCancelSelection}>キャンセル</button>}
+              <button className="primary" disabled={!selection || !draft.trim()} onClick={onSaveTranslation}>訳文を登録 <span>⌘↵</span></button>
+            </div>
           </div>
         </article>
       </div>
@@ -155,7 +162,7 @@ export function TranslationWorkspace({
               <article className={`pair-card ${editingTranslationId === item.id ? 'editing' : ''}`} key={item.id}>
                 <span className="pair-number">{String(index + 1).padStart(2, '0')}</span>
                 <p className="pair-source" lang={projectLanguageLocale(originalLanguage)}>{item.source}</p>
-                <p className="pair-translation" lang={projectLanguageLocale(translatedLanguage)}>{item.translated}</p>
+                <p className="pair-translation" lang={projectLanguageLocale(translatedLanguage)}><FormattedTranslation>{item.translated}</FormattedTranslation></p>
                 <div className="pair-actions">
                   <button aria-label="この対訳を編集" onClick={() => onEditTranslation(item.id)}>✎</button>
                   <button aria-label="この対訳を削除" onClick={() => onDeleteTranslation(item.id)}>×</button>
@@ -165,6 +172,7 @@ export function TranslationWorkspace({
           </div>
         </section>
       )}
+      {markupHelpOpen && <TranslationMarkupHelpModal onClose={() => setMarkupHelpOpen(false)} />}
     </section>
   )
 }

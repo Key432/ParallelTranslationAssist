@@ -1,6 +1,7 @@
 import { buildReaderRows } from '../domain/translations'
 import { projectLanguageLocale } from '../domain/projects'
 import type { ProjectLanguage, Translation } from '../types'
+import { FormattedTranslation } from './FormattedTranslation'
 
 type Props = {
   title: string
@@ -49,7 +50,7 @@ export function Reader({ title, author, sourceUrl, source, translations, origina
           <article className={row.translatedRow ? 'reader-row' : 'reader-row untranslated'} key={row.id}>
             <span className="row-number">{String(index + 1).padStart(2, '0')}</span>
             <p className="reader-source" lang={projectLanguageLocale(originalLanguage)}>{row.source}</p>
-            <p className="reader-translation" lang={projectLanguageLocale(translatedLanguage)}>{row.translated}</p>
+            <p className="reader-translation" lang={projectLanguageLocale(translatedLanguage)}><FormattedTranslation>{row.translated}</FormattedTranslation></p>
           </article>
         ))}
       </div>

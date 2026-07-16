@@ -123,4 +123,44 @@ describe('TranslationWorkspace', () => {
     expect(screen.getByText('編集中の原文')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'この対訳を編集' }).closest('.pair-card')).toHaveClass('editing')
   })
+
+  test('renders translation markup and opens its notation help', () => {
+    render(
+      <TranslationWorkspace
+        title="Project"
+        {...informationProps}
+        status="翻訳中"
+        source="Source"
+        translations={[{ id: 't1', start: 0, end: 6, source: 'Source', translated: '**太字**と｜漢字《かんじ》' }]}
+        selection={null}
+        editingTranslationId={null}
+        draft=""
+        sourceRef={createRef<HTMLTextAreaElement>()}
+        translationRef={createRef<HTMLTextAreaElement>()}
+        onSourceChange={jest.fn()}
+        onStatusChange={jest.fn()}
+        canUndo={false}
+        canRedo={false}
+        onUndo={jest.fn()}
+        onRedo={jest.fn()}
+        onOpenStatistics={jest.fn()}
+        onOpenInformation={jest.fn()}
+        onCaptureSelection={jest.fn()}
+        onDraftChange={jest.fn()}
+        onSaveTranslation={jest.fn()}
+        onCancelSelection={jest.fn()}
+        onEditTranslation={jest.fn()}
+        onDeleteTranslation={jest.fn()}
+      />,
+    )
+
+    expect(screen.getByText('太字').tagName).toBe('STRONG')
+    expect(screen.getByText('かんじ').tagName).toBe('RT')
+
+    fireEvent.click(screen.getByRole('button', { name: '訳文の記法を確認' }))
+    expect(screen.getByRole('dialog', { name: '訳文の記法' })).toBeInTheDocument()
+    expect(screen.getByText('|漢字《かんじ》', { selector: 'code' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '訳文の記法を閉じる' }))
+    expect(screen.queryByRole('dialog', { name: '訳文の記法' })).not.toBeInTheDocument()
+  })
 })

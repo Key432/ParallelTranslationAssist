@@ -118,6 +118,39 @@ test('highlights and scrolls to a registered source range when editing', async (
   await expect.poll(() => source.evaluate((element: HTMLTextAreaElement) => element.scrollTop)).toBeGreaterThan(0)
 })
 
+test('shows translation markup help and renders semantic translation styles', async ({ page }) => {
+  await page.getByRole('button', { name: '訳文の記法を確認' }).click()
+  const help = page.getByRole('dialog', { name: '訳文の記法' })
+  await expect(help).toBeVisible()
+  await expect(help.getByText('**テキスト**', { exact: true })).toBeVisible()
+  await expect(help.getByText('|漢字《かんじ》', { exact: true })).toBeVisible()
+  await help.getByRole('button', { name: '訳文の記法を閉じる' }).click()
+
+  const source = page.getByRole('textbox', { name: '翻訳する原文' })
+  await source.fill('Semantic text')
+  await source.evaluate((element: HTMLTextAreaElement) => {
+    element.focus()
+    element.setSelectionRange(0, element.value.length)
+  })
+  await page.getByRole('button', { name: '選択範囲を翻訳 →' }).click()
+  await page.getByRole('textbox', { name: '訳文' }).fill('**太字** _斜体_ ~取消~ ｜漢字《かんじ》')
+  await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
+
+  const registered = page.locator('.pair-translation')
+  await expect(registered.locator('strong')).toHaveText('太字')
+  await expect(registered.locator('em')).toHaveText('斜体')
+  await expect(registered.locator('s')).toHaveText('取消')
+  await expect(registered.locator('ruby')).toHaveText('漢字かんじ')
+  await expect(registered.locator('rt')).toHaveText('かんじ')
+
+  await page.getByRole('button', { name: '閲覧' }).click()
+  const readerTranslation = page.locator('.reader-translation')
+  await expect(readerTranslation.locator('strong')).toHaveText('太字')
+  await expect(readerTranslation.locator('em')).toHaveText('斜体')
+  await expect(readerTranslation.locator('s')).toHaveText('取消')
+  await expect(readerTranslation.locator('rt')).toHaveText('かんじ')
+})
+
 test('excludes the application header and reader summary when printing', async ({ page }) => {
   const source = page.getByRole('textbox', { name: '翻訳する原文' })
   await source.fill('Hello')
