@@ -1,5 +1,5 @@
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { SourceEditor } from './SourceEditor'
 
 describe('SourceEditor', () => {
@@ -63,5 +63,23 @@ describe('SourceEditor', () => {
     )
 
     expect(container.querySelector('.selected-source-range')).toHaveTextContent('Hello')
+  })
+
+  test('reports the caret position after a source edit', () => {
+    const onSourceChange = jest.fn()
+    render(
+      <SourceEditor
+        source="Hello"
+        translations={[]}
+        sourceRef={createRef<HTMLTextAreaElement>()}
+        onSourceChange={onSourceChange}
+      />,
+    )
+
+    fireEvent.change(screen.getByLabelText('翻訳する原文'), {
+      target: { value: 'Hello!', selectionStart: 6, selectionEnd: 6 },
+    })
+
+    expect(onSourceChange).toHaveBeenCalledWith('Hello!', { start: 6, end: 6 })
   })
 })

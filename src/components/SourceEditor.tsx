@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, type RefObject, type UIEvent } from 'react'
 import { buildSourceSegments } from '../domain/translations'
-import type { Selection, Translation } from '../types'
+import type { Selection, TextSelectionRange, Translation } from '../types'
 
 type Props = {
   source: string
   translations: Translation[]
   selection?: Selection | null
   sourceRef: RefObject<HTMLTextAreaElement | null>
-  onSourceChange: (source: string) => void
+  onSourceChange: (source: string, selection: TextSelectionRange) => void
   onBlur?: () => void
 }
 
@@ -46,7 +46,10 @@ export function SourceEditor({ source, translations, selection = null, sourceRef
       <textarea
         ref={sourceRef}
         value={source}
-        onChange={(event) => onSourceChange(event.target.value)}
+        onChange={(event) => onSourceChange(event.target.value, {
+          start: event.target.selectionStart,
+          end: event.target.selectionEnd,
+        })}
         onScroll={syncScroll}
         onBlur={onBlur}
         placeholder="翻訳したい英文をここに貼り付けます…"

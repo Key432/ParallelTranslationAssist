@@ -1,6 +1,6 @@
 import { useState, type RefObject } from 'react'
 import { PROJECT_STATUSES, projectLanguageLocale } from '../domain/projects'
-import type { ProjectLanguage, ProjectStatus, Selection, Translation } from '../types'
+import type { ProjectLanguage, ProjectStatus, Selection, TextSelectionRange, Translation } from '../types'
 import { HistoryControls } from './HistoryControls'
 import { FormattedTranslation } from './FormattedTranslation'
 import { SourceEditor } from './SourceEditor'
@@ -21,7 +21,7 @@ type Props = {
   draft: string
   sourceRef: RefObject<HTMLTextAreaElement | null>
   translationRef: RefObject<HTMLTextAreaElement | null>
-  onSourceChange: (source: string) => void
+  onSourceChange: (source: string, selection: TextSelectionRange) => void
   onSourceBlur?: () => void
   onStatusChange: (status: ProjectStatus) => void
   canUndo: boolean

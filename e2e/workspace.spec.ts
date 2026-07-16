@@ -118,6 +118,35 @@ test('highlights and scrolls to a registered source range when editing', async (
   await expect.poll(() => source.evaluate((element: HTMLTextAreaElement) => element.scrollTop)).toBeGreaterThan(0)
 })
 
+test('keeps the source update strategy and caret until the source loses focus', async ({ page }) => {
+  const source = page.getByRole('textbox', { name: '翻訳する原文' })
+  await source.evaluate((element: HTMLTextAreaElement) => {
+    element.focus()
+    element.setSelectionRange(0, 5)
+  })
+  await page.getByRole('button', { name: '選択範囲を翻訳 →' }).click()
+  await page.getByRole('textbox', { name: '訳文' }).fill('こんにちは')
+  await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
+
+  await source.fill('Hallo world')
+  const dialog = page.getByRole('alertdialog', { name: 'この原文の更新は登録済みの対訳に影響します' })
+  await dialog.getByRole('button', { name: '訳文を保持' }).click()
+  await expect(source).toBeFocused()
+  await expect.poll(() => source.evaluate((element: HTMLTextAreaElement) => element.selectionStart)).toBe('Hallo world'.length)
+
+  await page.waitForTimeout(900)
+  await source.evaluate((element: HTMLTextAreaElement) => element.setSelectionRange(0, 1))
+  await page.keyboard.type('Y')
+  await expect(source).toHaveValue('Yallo world')
+  await expect(dialog).toBeHidden()
+
+  await page.getByRole('heading', { name: 'はじめてのプロジェクト' }).click()
+  await source.focus()
+  await source.evaluate((element: HTMLTextAreaElement) => element.setSelectionRange(0, 1))
+  await page.keyboard.type('H')
+  await expect(dialog).toBeVisible()
+})
+
 test('shows translation markup help and renders semantic translation styles', async ({ page }) => {
   await page.getByRole('button', { name: '訳文の記法を確認' }).click()
   const help = page.getByRole('dialog', { name: '訳文の記法' })

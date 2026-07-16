@@ -44,4 +44,6 @@ export type Selection = {
   text: string
 }
 
+export type TextSelectionRange = Pick<Selection, 'start' | 'end'>
+
 export type ViewMode = 'edit' | 'read'

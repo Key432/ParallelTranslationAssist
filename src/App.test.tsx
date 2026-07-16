@@ -281,20 +281,34 @@ describe('App translation editing', () => {
 
   test('keeps translation text while updating its registered source', async () => {
     await renderApp()
+    jest.useFakeTimers()
     const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' })
-    fireEvent.change(sourceText, { target: { value: 'Hallo world' } })
+    try {
+      fireEvent.change(sourceText, { target: { value: 'Hallo world', selectionStart: 2, selectionEnd: 2 } })
 
-    const dialog = screen.getByRole('alertdialog')
-    fireEvent.click(within(dialog).getByRole('button', { name: '訳文を保持' }))
+      const dialog = screen.getByRole('alertdialog')
+      fireEvent.click(within(dialog).getByRole('button', { name: '訳文を保持' }))
+      act(() => { jest.advanceTimersByTime(801) })
 
-    expect(sourceText).toHaveValue('Hallo world')
-    const keptCard = screen.getByRole('button', { name: 'この対訳を編集' }).closest('.pair-card')
-    expect(keptCard).toHaveTextContent('Hallo')
-    expect(keptCard).toHaveTextContent('こんにちは')
+      expect(sourceText).toHaveValue('Hallo world')
+      expect(sourceText).toHaveFocus()
+      expect((sourceText as HTMLTextAreaElement).selectionStart).toBe(2)
+      const keptCard = screen.getByRole('button', { name: 'この対訳を編集' }).closest('.pair-card')
+      expect(keptCard).toHaveTextContent('Hallo')
+      expect(keptCard).toHaveTextContent('こんにちは')
 
-    fireEvent.change(sourceText, { target: { value: 'Hullo world' } })
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-    expect(keptCard).toHaveTextContent('Hullo')
+      fireEvent.change(sourceText, { target: { value: 'Hullo world', selectionStart: 2, selectionEnd: 2 } })
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+      expect(keptCard).toHaveTextContent('Hullo')
+
+      fireEvent.blur(sourceText)
+      fireEvent.focus(sourceText)
+      fireEvent.change(sourceText, { target: { value: 'Hello world', selectionStart: 2, selectionEnd: 2 } })
+      expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    } finally {
+      jest.clearAllTimers()
+      jest.useRealTimers()
+    }
   })
 
   test('appends an imported text file while preserving translations', async () => {

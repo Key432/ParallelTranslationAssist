@@ -11,7 +11,7 @@ import { calculateTextEdit, findExactTranslation, findOverlappingTranslations, f
 import type { TextEdit } from './domain/translations'
 import { useWorkspace } from './hooks/useWorkspace'
 import { useOutsideClick } from './hooks/useOutsideClick'
-import type { Project, ProjectInformation, Selection, ViewMode } from './types'
+import type { Project, ProjectInformation, Selection, TextSelectionRange, ViewMode } from './types'
 import { downloadFile } from './services/browserFiles'
 import { buildParallelText, buildTranslationsText, parseProjectFile, safeFileName, serializeProject } from './services/projectTransfer'
 
@@ -26,6 +26,7 @@ type PendingSourceUpdate = {
   nextSource: string
   edit: TextEdit
   affectedIds: string[]
+  caret: TextSelectionRange
 }
 
 function App() {
@@ -63,7 +64,6 @@ function App() {
     sourceHistoryTimer.current = window.setTimeout(() => {
       sourceHistoryTimer.current = null
       sourceHistoryActive.current = false
-      approvedSourceKeepIds.current.clear()
     }, 800)
     return recordHistory
   }, [])
@@ -297,7 +297,7 @@ function App() {
     setPendingSourceUpdate(null)
   }
 
-  const updateSource = (nextSource: string) => {
+  const updateSource = (nextSource: string, caret: TextSelectionRange) => {
     if (nextSource === source) return
     const edit = calculateTextEdit(source, nextSource)
     const affected = findTranslationsAffectedByEdit(edit, translations)
@@ -309,21 +309,35 @@ function App() {
       applySourceUpdate(nextSource, edit, 'keep')
       return
     }
-    setPendingSourceUpdate({ nextSource, edit, affectedIds: affected.map((translation) => translation.id) })
+    setPendingSourceUpdate({ nextSource, edit, affectedIds: affected.map((translation) => translation.id), caret })
+  }
+
+  const restoreSourceCaret = ({ start, end }: TextSelectionRange) => {
+    window.setTimeout(() => {
+      const field = sourceRef.current
+      if (!field) return
+      field.focus()
+      field.setSelectionRange(
+        Math.min(start, field.value.length),
+        Math.min(end, field.value.length),
+      )
+    }, 0)
   }
 
   const cancelSourceUpdate = () => {
+    const caret = pendingSourceUpdate?.caret
     setPendingSourceUpdate(null)
     endSourceHistoryGroup()
-    window.setTimeout(() => sourceRef.current?.focus(), 0)
+    if (caret) restoreSourceCaret(caret)
   }
 
   const confirmSourceUpdate = (strategy: 'discard' | 'keep') => {
     if (!pendingSourceUpdate) return
-    if (strategy === 'keep') pendingSourceUpdate.affectedIds.forEach((id) => approvedSourceKeepIds.current.add(id))
-    applySourceUpdate(pendingSourceUpdate.nextSource, pendingSourceUpdate.edit, strategy)
+    const update = pendingSourceUpdate
+    if (strategy === 'keep') update.affectedIds.forEach((id) => approvedSourceKeepIds.current.add(id))
+    applySourceUpdate(update.nextSource, update.edit, strategy)
     setNotice(strategy === 'keep' ? '対訳の原文範囲を更新しました' : '分断された対訳を破棄しました')
-    window.setTimeout(() => sourceRef.current?.focus(), 0)
+    restoreSourceCaret(update.caret)
   }
 
   const clearActiveProject = () => {
