@@ -6,6 +6,12 @@ export type Translation = {
   translated: string
 }
 
+export type TranslationKeyword = {
+  id: string
+  source: string
+  translated: string
+}
+
 export type Project = {
   id: string
   title: string
@@ -16,6 +22,7 @@ export type Project = {
   status: ProjectStatus
   source: string
   translations: Translation[]
+  keywords: TranslationKeyword[]
   updatedAt: string
 }
 
@@ -25,7 +32,7 @@ export type ProjectLanguage = 'ENGLISH' | 'JAPANESE' | 'DEUTSCH' | 'RUSSIAN' | '
 
 export type ProjectInformation = Pick<Project, 'title' | 'author' | 'sourceUrl' | 'originalLanguage' | 'translatedLanguage'>
 
-export type ProjectSnapshot = Pick<Project, 'title' | 'author' | 'sourceUrl' | 'originalLanguage' | 'translatedLanguage' | 'status' | 'source' | 'translations'>
+export type ProjectSnapshot = Pick<Project, 'title' | 'author' | 'sourceUrl' | 'originalLanguage' | 'translatedLanguage' | 'status' | 'source' | 'translations' | 'keywords'>
 
 export type ProjectHistory = {
   past: ProjectSnapshot[]

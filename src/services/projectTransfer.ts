@@ -1,6 +1,6 @@
 import { isProjectLanguage, isProjectStatus, normalizeProject } from '../domain/projects'
 import { buildReaderRows, sortTranslations } from '../domain/translations'
-import type { Project, Translation } from '../types'
+import type { Project, Translation, TranslationKeyword } from '../types'
 
 export const PROJECT_FILE_FORMAT = 'parallel-translation-assist'
 export const PROJECT_FILE_VERSION = 1
@@ -24,6 +24,16 @@ function isTranslation(value: unknown): value is Translation {
     && typeof translation.translated === 'string'
 }
 
+function isKeyword(value: unknown): value is TranslationKeyword {
+  if (!value || typeof value !== 'object') return false
+  const keyword = value as Partial<TranslationKeyword>
+  return typeof keyword.id === 'string'
+    && typeof keyword.source === 'string'
+    && keyword.source.trim().length > 0
+    && typeof keyword.translated === 'string'
+    && keyword.translated.trim().length > 0
+}
+
 function isImportedProject(value: unknown): value is Omit<Project, 'updatedAt'> & { updatedAt?: string } {
   if (!value || typeof value !== 'object') return false
   const project = value as Partial<Project>
@@ -37,6 +47,7 @@ function isImportedProject(value: unknown): value is Omit<Project, 'updatedAt'> 
     && (project.translatedLanguage === undefined || isProjectLanguage(project.translatedLanguage))
     && Array.isArray(project.translations)
     && project.translations.every(isTranslation)
+    && (project.keywords === undefined || (Array.isArray(project.keywords) && project.keywords.every(isKeyword)))
     && project.translations.every((translation) => translation.end <= (project.source as string).length)
 }
 

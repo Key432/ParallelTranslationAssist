@@ -12,6 +12,7 @@ function project(title: string, id = 'project-1'): Project {
     status: '未着手',
     source: 'Hello',
     translations: [{ id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' }],
+    keywords: [],
     updatedAt: '2026-07-16T01:00:00.000Z',
   }
 }
@@ -33,7 +34,14 @@ describe('project history', () => {
       past: [{ title: 'Legacy', status: '未着手', source: '', translations: [] }],
       future: [],
     })
-    expect(legacy.past[0]).toMatchObject({ author: '', sourceUrl: '', originalLanguage: 'ENGLISH', translatedLanguage: 'JAPANESE' })
+    expect(legacy.past[0]).toMatchObject({ author: '', sourceUrl: '', originalLanguage: 'ENGLISH', translatedLanguage: 'JAPANESE', keywords: [] })
+  })
+
+  test('records and restores project keywords', () => {
+    const current = project('A')
+    const changed = recordProjectChange(current, { ...current, keywords: [{ id: 'word', source: 'word', translated: '単語' }] }, emptyProjectHistory())
+    expect(changed.history.past).toHaveLength(1)
+    expect(undoProject(changed.project, changed.history)?.project.keywords).toEqual([])
   })
 
   test('undoes and redoes a project change', () => {

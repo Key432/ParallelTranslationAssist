@@ -12,6 +12,7 @@ const defaultProjectInformation = {
   sourceUrl: '',
   originalLanguage: 'ENGLISH' as const,
   translatedLanguage: 'JAPANESE' as const,
+  keywords: [],
 }
 
 const defaultWorkspace: WorkspaceFixture = {
@@ -58,6 +59,29 @@ describe('App translation editing', () => {
     await waitFor(async () => {
       expect((await loadWorkspaceState()).projects[0].translations[0].translated).toBe('やあ')
     })
+  })
+
+  test('stores translation keywords in the active project only', async () => {
+    await renderApp()
+    fireEvent.click(screen.getByRole('button', { name: 'キーワード追加' }))
+    const dialog = screen.getByRole('dialog', { name: '訳語キーワード' })
+    fireEvent.change(within(dialog).getByLabelText('原語'), { target: { value: 'Hello' } })
+    fireEvent.change(within(dialog).getByLabelText('訳語'), { target: { value: '挨拶' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: '登録' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: '訳語キーワードを閉じる' }))
+
+    expect(document.querySelector('.keyword-source')).toHaveTextContent('Hello')
+    await waitFor(async () => {
+      expect((await loadWorkspaceState()).projects[0].keywords).toEqual([
+        expect.objectContaining({ source: 'Hello', translated: '挨拶' }),
+      ])
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '新しいプロジェクトを作成' }))
+    expect(document.querySelector('.keyword-source')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'キーワード追加' }))
+    fireEvent.click(screen.getByRole('tab', { name: /一覧/ }))
+    expect(screen.getByText('登録されたキーワードはありません。')).toBeInTheDocument()
   })
 
   test('opens a visual summary of the current project statistics', async () => {

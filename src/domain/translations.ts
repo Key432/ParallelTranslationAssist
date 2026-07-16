@@ -1,4 +1,5 @@
-import type { Selection, Translation } from '../types'
+import { findKeywordMatches } from './keywords'
+import type { Selection, Translation, TranslationKeyword } from '../types'
 
 export type ReaderRow = {
   id: string
@@ -12,6 +13,7 @@ export type SourceSegment = {
   text: string
   translated: boolean
   selected: boolean
+  keyword: TranslationKeyword | null
 }
 
 export type TextEdit = {
@@ -102,9 +104,10 @@ export function reconcileTranslationsAfterEdit(
     })
 }
 
-export function buildSourceSegments(source: string, translations: Translation[], selection?: Selection | null): SourceSegment[] {
+export function buildSourceSegments(source: string, translations: Translation[], selection?: Selection | null, keywords: TranslationKeyword[] = []): SourceSegment[] {
   const clamp = (position: number) => Math.max(0, Math.min(position, source.length))
   const boundaries = new Set([0, source.length])
+  const keywordMatches = findKeywordMatches(source, keywords)
   translations.forEach((translation) => {
     boundaries.add(clamp(translation.start))
     boundaries.add(clamp(translation.end))
@@ -113,6 +116,10 @@ export function buildSourceSegments(source: string, translations: Translation[],
     boundaries.add(clamp(selection.start))
     boundaries.add(clamp(selection.end))
   }
+  keywordMatches.forEach((match) => {
+    boundaries.add(match.start)
+    boundaries.add(match.end)
+  })
 
   const positions = [...boundaries].sort((left, right) => left - right)
   return positions.slice(0, -1).flatMap((start, index) => {
@@ -123,6 +130,7 @@ export function buildSourceSegments(source: string, translations: Translation[],
       text: source.slice(start, end),
       translated: translations.some((translation) => translation.start < end && translation.end > start),
       selected: Boolean(selection && selection.start < end && selection.end > start),
+      keyword: keywordMatches.find((match) => match.start <= start && match.end >= end)?.keyword ?? null,
     }]
   })
 }

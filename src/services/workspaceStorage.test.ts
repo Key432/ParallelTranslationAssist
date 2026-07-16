@@ -8,6 +8,7 @@ const projectInformation = {
   sourceUrl: '',
   originalLanguage: 'ENGLISH' as const,
   translatedLanguage: 'JAPANESE' as const,
+  keywords: [],
 }
 
 describe('workspace storage', () => {

@@ -12,6 +12,7 @@ const project: Project = {
   status: '翻訳中',
   source: 'Alice was beginning...',
   translations: [],
+  keywords: [],
   updatedAt: '2026-07-16T01:00:00.000Z',
 }
 

@@ -96,6 +96,42 @@ test('registers a translation from a source selection and updates progress', asy
   await expect(dialog.getByText('未翻訳 1語')).toBeVisible()
 })
 
+test('registers, updates, displays, and deletes a project keyword', async ({ page }) => {
+  const source = page.getByRole('textbox', { name: '翻訳する原文' })
+  await source.fill('Translation translates translation.')
+
+  const addButton = page.getByRole('button', { name: 'キーワード追加' })
+  await addButton.hover()
+  await expect(page.locator('.translation-keyword-tooltip')).toBeVisible()
+  await addButton.click()
+
+  const dialog = page.getByRole('dialog', { name: '訳語キーワード' })
+  await dialog.getByRole('textbox', { name: '原語', exact: true }).fill('translation')
+  await dialog.getByRole('textbox', { name: '訳語', exact: true }).fill('翻訳')
+  await dialog.getByRole('button', { name: '登録' }).click()
+  await expect(dialog.getByText('translation', { exact: true })).toBeVisible()
+  await dialog.getByRole('button', { name: '訳語キーワードを閉じる' }).click()
+
+  const markedKeyword = page.locator('.keyword-source')
+  await expect(markedKeyword).toHaveCount(1)
+  await expect.poll(() => markedKeyword.evaluate((element) => getComputedStyle(element).textDecorationStyle)).toBe('dashed')
+  const bounds = await markedKeyword.boundingBox()
+  if (!bounds) throw new Error('キーワードの表示位置を取得できませんでした。')
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
+  await expect(page.getByRole('tooltip', { name: '翻訳' })).toBeVisible()
+
+  await addButton.click()
+  await dialog.getByRole('tab', { name: /一覧/ }).click()
+  await dialog.getByRole('button', { name: 'translationを編集' }).click()
+  await dialog.getByRole('textbox', { name: '訳語', exact: true }).fill('訳すこと')
+  await dialog.getByRole('button', { name: '更新' }).click()
+  await expect(dialog.getByText('訳すこと')).toBeVisible()
+  await dialog.getByRole('button', { name: 'translationを削除' }).click()
+  await expect(dialog.getByText('登録されたキーワードはありません。')).toBeVisible()
+  await dialog.getByRole('button', { name: '訳語キーワードを閉じる' }).click()
+  await expect(markedKeyword).toHaveCount(0)
+})
+
 test('highlights and scrolls to a registered source range when editing', async ({ page }) => {
   const lines = Array.from({ length: 60 }, (_, index) => `Line ${index + 1}`).join('\n')
   const sourceText = `${lines}\nTarget text`

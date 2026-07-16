@@ -14,6 +14,7 @@ const project: Project = {
     { id: 'world', start: 10, end: 15, source: 'world', translated: '世界' },
     { id: 'hello', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
   ],
+  keywords: [{ id: 'hello-keyword', source: 'Hello', translated: '挨拶' }],
   updatedAt: '2026-07-16T01:00:00.000Z',
 }
 
@@ -34,6 +35,7 @@ describe('project transfer', () => {
       sourceUrl: _sourceUrl,
       originalLanguage: _originalLanguage,
       translatedLanguage: _translatedLanguage,
+      keywords: _keywords,
       ...legacyProject
     } = project
     const imported = parseProjectFile(JSON.stringify({
@@ -43,7 +45,7 @@ describe('project transfer', () => {
       project: legacyProject,
     }))
     expect(imported.updatedAt).toBe('2026-07-15T12:00:00.000Z')
-    expect(imported).toMatchObject({ author: '', sourceUrl: '', originalLanguage: 'ENGLISH', translatedLanguage: 'JAPANESE' })
+    expect(imported).toMatchObject({ author: '', sourceUrl: '', originalLanguage: 'ENGLISH', translatedLanguage: 'JAPANESE', keywords: [] })
   })
 
   test('exports translated text in source order', () => {

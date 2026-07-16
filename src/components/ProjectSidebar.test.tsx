@@ -5,7 +5,7 @@ describe('ProjectSidebar', () => {
   test('shows the project status opposite its title', () => {
     render(
       <ProjectSidebar
-        projects={[{ id: 'project-1', title: 'Alice', author: '', sourceUrl: '', originalLanguage: 'ENGLISH', translatedLanguage: 'JAPANESE', status: '翻訳中', source: 'Text', translations: [], updatedAt: '2026-07-16T01:00:00.000Z' }]}
+        projects={[{ id: 'project-1', title: 'Alice', author: '', sourceUrl: '', originalLanguage: 'ENGLISH', translatedLanguage: 'JAPANESE', status: '翻訳中', source: 'Text', translations: [], keywords: [], updatedAt: '2026-07-16T01:00:00.000Z' }]}
         open
         sidebarRef={null}
         activeProjectId="project-1"

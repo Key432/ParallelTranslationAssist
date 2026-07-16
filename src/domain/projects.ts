@@ -36,6 +36,7 @@ export function createProject(title: string, source = '', updatedAt = new Date()
     status: '未着手',
     source,
     translations: [],
+    keywords: [],
     updatedAt,
   }
 }
@@ -64,6 +65,12 @@ export function normalizeProject(value: unknown): Project | null {
     status: isProjectStatus(project.status) ? project.status : '未着手',
     source: project.source as string,
     translations: project.translations as Project['translations'],
+    keywords: Array.isArray(project.keywords)
+      ? project.keywords.filter((keyword) => keyword
+        && typeof keyword.id === 'string'
+        && typeof keyword.source === 'string'
+        && typeof keyword.translated === 'string')
+      : [],
     updatedAt: normalizeUpdatedAt(project.updatedAt),
   }
 }

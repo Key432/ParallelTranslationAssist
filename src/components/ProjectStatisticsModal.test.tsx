@@ -12,6 +12,7 @@ const project: Project = {
   status: '翻訳中',
   source: 'Hello brave world',
   translations: [{ id: 'one', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' }],
+  keywords: [],
   updatedAt: '2026-07-16T01:30:00.000Z',
 }
 

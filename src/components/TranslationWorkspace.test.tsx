@@ -7,6 +7,10 @@ const informationProps = {
   sourceUrl: '',
   originalLanguage: 'ENGLISH' as const,
   translatedLanguage: 'JAPANESE' as const,
+  keywords: [],
+  onAddKeyword: jest.fn(),
+  onUpdateKeyword: jest.fn(),
+  onDeleteKeyword: jest.fn(),
 }
 
 describe('TranslationWorkspace', () => {

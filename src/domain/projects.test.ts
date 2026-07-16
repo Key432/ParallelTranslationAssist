@@ -9,6 +9,7 @@ describe('project domain', () => {
       originalLanguage: 'ENGLISH',
       translatedLanguage: 'JAPANESE',
       status: '未着手',
+      keywords: [],
     })
     expect(createProject('New project').updatedAt).toEqual(expect.any(String))
   })
@@ -29,7 +30,7 @@ describe('project domain', () => {
   test('adds the default status to a project saved before statuses existed', () => {
     const project = normalizeProject({ id: 'legacy', title: 'Legacy', source: '', translations: [] })
     expect(project?.status).toBe('未着手')
-    expect(project).toMatchObject({ author: '', sourceUrl: '', originalLanguage: 'ENGLISH', translatedLanguage: 'JAPANESE' })
+    expect(project).toMatchObject({ author: '', sourceUrl: '', originalLanguage: 'ENGLISH', translatedLanguage: 'JAPANESE', keywords: [] })
     expect(project?.updatedAt).toEqual(expect.any(String))
   })
 })

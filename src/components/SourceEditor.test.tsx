@@ -65,6 +65,23 @@ describe('SourceEditor', () => {
     expect(container.querySelector('.selected-source-range')).toHaveTextContent('Hello')
   })
 
+  test('marks matching registered keywords and exposes their translation', () => {
+    const { container } = render(
+      <SourceEditor
+        source="A cat and a concatenate"
+        translations={[]}
+        keywords={[{ id: 'cat', source: 'cat', translated: '猫' }]}
+        sourceRef={createRef<HTMLTextAreaElement>()}
+        onSourceChange={jest.fn()}
+      />,
+    )
+
+    const keyword = container.querySelector('.keyword-source')
+    expect(keyword).toHaveTextContent('cat')
+    expect(keyword).toHaveAttribute('title', '猫')
+    expect(container.querySelectorAll('.keyword-source')).toHaveLength(1)
+  })
+
   test('reports the caret position after a source edit', () => {
     const onSourceChange = jest.fn()
     render(

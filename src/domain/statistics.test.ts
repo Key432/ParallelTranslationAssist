@@ -15,6 +15,7 @@ function project(overrides: Partial<Project> = {}): Project {
       { id: 'one', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
       { id: 'two', start: 12, end: 17, source: 'world', translated: '世界' },
     ],
+    keywords: [],
     updatedAt: '2026-07-16T01:00:00.000Z',
     ...overrides,
   }

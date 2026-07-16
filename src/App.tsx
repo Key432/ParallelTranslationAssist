@@ -70,6 +70,7 @@ function App() {
 
   const source = workspace.activeProject?.source ?? ''
   const translations = workspace.activeProject?.translations ?? []
+  const keywords = workspace.activeProject?.keywords ?? []
   const sortedTranslations = useMemo(() => sortTranslations(translations), [translations])
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])
 
@@ -467,6 +468,7 @@ function App() {
             <EmptyProjects onCreate={addProject} />
           ) : view === 'edit' ? (
             <TranslationWorkspace
+              key={workspace.activeProject.id}
               title={workspace.activeProject.title}
               author={workspace.activeProject.author}
               sourceUrl={workspace.activeProject.sourceUrl}
@@ -475,6 +477,7 @@ function App() {
               status={workspace.activeProject.status}
               source={source}
               translations={sortedTranslations}
+              keywords={keywords}
               selection={selection}
               highlightedSelection={pendingDiscard?.selection}
               editingTranslationId={editingTranslationId}
@@ -505,6 +508,27 @@ function App() {
                   setDraft('')
                   setEditingTranslationId(null)
                 }
+              }}
+              onAddKeyword={(keywordSource, translated) => {
+                workspace.updateActiveProject((project) => ({
+                  ...project,
+                  keywords: [...project.keywords, { id: crypto.randomUUID(), source: keywordSource, translated }],
+                }))
+                setNotice('訳語キーワードを登録しました')
+              }}
+              onUpdateKeyword={(id, keywordSource, translated) => {
+                workspace.updateActiveProject((project) => ({
+                  ...project,
+                  keywords: project.keywords.map((keyword) => keyword.id === id ? { ...keyword, source: keywordSource, translated } : keyword),
+                }))
+                setNotice('訳語キーワードを更新しました')
+              }}
+              onDeleteKeyword={(id) => {
+                workspace.updateActiveProject((project) => ({
+                  ...project,
+                  keywords: project.keywords.filter((keyword) => keyword.id !== id),
+                }))
+                setNotice('訳語キーワードを削除しました')
               }}
             />
           ) : (

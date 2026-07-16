@@ -1,10 +1,11 @@
 import { useState, type RefObject } from 'react'
 import { PROJECT_STATUSES, projectLanguageLocale } from '../domain/projects'
-import type { ProjectLanguage, ProjectStatus, Selection, TextSelectionRange, Translation } from '../types'
+import type { ProjectLanguage, ProjectStatus, Selection, TextSelectionRange, Translation, TranslationKeyword } from '../types'
 import { HistoryControls } from './HistoryControls'
 import { FormattedTranslation } from './FormattedTranslation'
 import { SourceEditor } from './SourceEditor'
 import { TranslationMarkupHelpModal } from './TranslationMarkupHelpModal'
+import { TranslationKeywordModal } from './TranslationKeywordModal'
 
 type Props = {
   title: string
@@ -15,6 +16,7 @@ type Props = {
   status: ProjectStatus
   source: string
   translations: Translation[]
+  keywords: TranslationKeyword[]
   selection: Selection | null
   highlightedSelection?: Selection | null
   editingTranslationId: string | null
@@ -36,6 +38,9 @@ type Props = {
   onCancelSelection: () => void
   onEditTranslation: (id: string) => void
   onDeleteTranslation: (id: string) => void
+  onAddKeyword: (source: string, translated: string) => void
+  onUpdateKeyword: (id: string, source: string, translated: string) => void
+  onDeleteKeyword: (id: string) => void
 }
 
 export function TranslationWorkspace({
@@ -47,6 +52,7 @@ export function TranslationWorkspace({
   status,
   source,
   translations,
+  keywords,
   selection,
   highlightedSelection,
   editingTranslationId,
@@ -68,8 +74,12 @@ export function TranslationWorkspace({
   onCancelSelection,
   onEditTranslation,
   onDeleteTranslation,
+  onAddKeyword,
+  onUpdateKeyword,
+  onDeleteKeyword,
 }: Props) {
   const [markupHelpOpen, setMarkupHelpOpen] = useState(false)
+  const [keywordModalOpen, setKeywordModalOpen] = useState(false)
 
   return (
     <section className="workspace" aria-label="翻訳編集">
@@ -111,7 +121,7 @@ export function TranslationWorkspace({
             <div><span className="step">01</span><h2>原文</h2><span className="lang">{originalLanguage}</span></div>
             <span className="count">{source.length.toLocaleString()} 字</span>
           </div>
-          <SourceEditor source={source} translations={translations} selection={highlightedSelection ?? selection} sourceRef={sourceRef} onSourceChange={onSourceChange} onBlur={onSourceBlur} />
+          <SourceEditor source={source} translations={translations} keywords={keywords} selection={highlightedSelection ?? selection} sourceRef={sourceRef} onSourceChange={onSourceChange} onBlur={onSourceBlur} />
           <div className="panel-footer">
             <span>選択範囲は訳文と一対一で登録されます</span>
             <button className="primary" onClick={onCaptureSelection}>選択範囲を翻訳 <span>→</span></button>
@@ -144,6 +154,9 @@ export function TranslationWorkspace({
               <p>一文から段落まで、好きな長さで<br />訳文を紐づけられます。</p>
             </div>
           )}
+          <button className="translation-keyword-button" onClick={() => setKeywordModalOpen(true)} aria-label="キーワード追加">
+            <span aria-hidden="true">+</span><span className="translation-keyword-tooltip">キーワード追加</span>
+          </button>
           <div className="panel-footer translation-footer">
             <button className="translation-help-button" onClick={() => setMarkupHelpOpen(true)} aria-label="訳文の記法を確認">?</button>
             <div className="translation-footer-actions">
@@ -173,6 +186,15 @@ export function TranslationWorkspace({
         </section>
       )}
       {markupHelpOpen && <TranslationMarkupHelpModal onClose={() => setMarkupHelpOpen(false)} />}
+      {keywordModalOpen && (
+        <TranslationKeywordModal
+          keywords={keywords}
+          onClose={() => setKeywordModalOpen(false)}
+          onAdd={onAddKeyword}
+          onUpdate={onUpdateKeyword}
+          onDelete={onDeleteKeyword}
+        />
+      )}
     </section>
   )
 }

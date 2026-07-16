@@ -1,5 +1,5 @@
 import { isProjectLanguage, isProjectStatus } from './projects'
-import type { Project, ProjectHistory, ProjectSnapshot, Translation } from '../types'
+import type { Project, ProjectHistory, ProjectSnapshot, Translation, TranslationKeyword } from '../types'
 
 export const MAX_HISTORY_ENTRIES = 25
 
@@ -16,6 +16,10 @@ function cloneTranslation(translation: Translation): Translation {
   return { ...translation }
 }
 
+function cloneKeyword(keyword: TranslationKeyword): TranslationKeyword {
+  return { ...keyword }
+}
+
 export function cloneSnapshot(snapshot: ProjectSnapshot): ProjectSnapshot {
   return {
     title: snapshot.title,
@@ -26,6 +30,7 @@ export function cloneSnapshot(snapshot: ProjectSnapshot): ProjectSnapshot {
     status: snapshot.status,
     source: snapshot.source,
     translations: snapshot.translations.map(cloneTranslation),
+    keywords: snapshot.keywords.map(cloneKeyword),
   }
 }
 
@@ -46,13 +51,20 @@ export function projectContentsEqual(left: Project | ProjectSnapshot, right: Pro
     || left.status !== right.status
     || left.source !== right.source) return false
   if (left.translations.length !== right.translations.length) return false
-  return left.translations.every((translation, index) => {
+  if (!left.translations.every((translation, index) => {
     const other = right.translations[index]
     return translation.id === other.id
       && translation.start === other.start
       && translation.end === other.end
       && translation.source === other.source
       && translation.translated === other.translated
+  })) return false
+  if (left.keywords.length !== right.keywords.length) return false
+  return left.keywords.every((keyword, index) => {
+    const other = right.keywords[index]
+    return keyword.id === other.id
+      && keyword.source === other.source
+      && keyword.translated === other.translated
   })
 }
 
@@ -112,6 +124,14 @@ function isTranslation(value: unknown): value is Translation {
     && typeof translation.translated === 'string'
 }
 
+function isKeyword(value: unknown): value is TranslationKeyword {
+  if (!value || typeof value !== 'object') return false
+  const keyword = value as Partial<TranslationKeyword>
+  return typeof keyword.id === 'string'
+    && typeof keyword.source === 'string'
+    && typeof keyword.translated === 'string'
+}
+
 function normalizeSnapshot(value: unknown): ProjectSnapshot | null {
   if (!value || typeof value !== 'object') return null
   const snapshot = value as Partial<ProjectSnapshot>
@@ -121,13 +141,15 @@ function normalizeSnapshot(value: unknown): ProjectSnapshot | null {
     || (snapshot.originalLanguage !== undefined && !isProjectLanguage(snapshot.originalLanguage))
     || (snapshot.translatedLanguage !== undefined && !isProjectLanguage(snapshot.translatedLanguage))
     || !Array.isArray(snapshot.translations)
-    || !snapshot.translations.every(isTranslation)) return null
+    || !snapshot.translations.every(isTranslation)
+    || (snapshot.keywords !== undefined && (!Array.isArray(snapshot.keywords) || !snapshot.keywords.every(isKeyword)))) return null
   return cloneSnapshot({
     ...(snapshot as ProjectSnapshot),
     author: typeof snapshot.author === 'string' ? snapshot.author : '',
     sourceUrl: typeof snapshot.sourceUrl === 'string' ? snapshot.sourceUrl : '',
     originalLanguage: snapshot.originalLanguage === undefined ? 'ENGLISH' : snapshot.originalLanguage,
     translatedLanguage: snapshot.translatedLanguage === undefined ? 'JAPANESE' : snapshot.translatedLanguage,
+    keywords: snapshot.keywords === undefined ? [] : snapshot.keywords,
   })
 }
 
