@@ -16,7 +16,7 @@ describe('ProjectStatisticsModal', () => {
     render(<ProjectStatisticsModal project={project} onClose={jest.fn()} />)
 
     expect(screen.getByRole('dialog', { name: '統計' })).toBeInTheDocument()
-    expect(screen.getByLabelText('翻訳済み 29.4%')).toBeInTheDocument()
+    expect(screen.getByLabelText('翻訳済み 33.3%')).toBeInTheDocument()
     expect(screen.getByText('3 語')).toBeInTheDocument()
     expect(screen.getByText('原文文字数')).toBeInTheDocument()
     expect(screen.getByText('対訳件数')).toBeInTheDocument()

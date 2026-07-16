@@ -58,7 +58,7 @@ describe('App translation editing', () => {
 
     const dialog = screen.getByRole('dialog', { name: '統計' })
     expect(dialog).toBeInTheDocument()
-    expect(within(dialog).getByLabelText('翻訳済み 45.5%')).toBeInTheDocument()
+    expect(within(dialog).getByLabelText('翻訳済み 50%')).toBeInTheDocument()
     expect(within(dialog).getByText('原文文字数')).toBeInTheDocument()
     expect(within(dialog).getByText(/2026年7月16日/)).toBeInTheDocument()
 

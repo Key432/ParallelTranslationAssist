@@ -43,15 +43,14 @@ export function calculateProjectStatistics(project: Project): ProjectStatistics 
   const translatedWordCount = words.filter((word) => ranges.some(
     (range) => range.start <= word.start && word.end <= range.end,
   )).length
-  const translatedSourceCharacters = ranges.reduce((sum, range) => sum + range.end - range.start, 0)
 
   return {
     sourceWordCount: words.length,
     sourceCharacterCount: project.source.length,
     translationCount: project.translations.length,
-    translatedPercentage: project.source.length === 0
+    translatedPercentage: words.length === 0
       ? 0
-      : Math.round((translatedSourceCharacters / project.source.length) * 1000) / 10,
+      : Math.round((translatedWordCount / words.length) * 1000) / 10,
     translatedWordCount,
     untranslatedWordCount: words.length - translatedWordCount,
     translatedTextCharacterCount: project.translations.reduce(

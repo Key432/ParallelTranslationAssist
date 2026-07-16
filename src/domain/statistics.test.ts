@@ -22,7 +22,7 @@ describe('calculateProjectStatistics', () => {
       sourceWordCount: 3,
       sourceCharacterCount: 17,
       translationCount: 2,
-      translatedPercentage: 58.8,
+      translatedPercentage: 66.7,
       translatedWordCount: 2,
       untranslatedWordCount: 1,
       translatedTextCharacterCount: 7,
@@ -40,6 +40,21 @@ describe('calculateProjectStatistics', () => {
 
     expect(stats.translatedPercentage).toBe(100)
     expect(stats.translatedWordCount).toBe(2)
+  })
+
+  it('reports 100 percent when every word is translated even if whitespace remains outside ranges', () => {
+    const stats = calculateProjectStatistics(project({
+      source: 'one\n\ntwo\n',
+      translations: [
+        { id: 'one', start: 0, end: 3, source: 'one', translated: '一' },
+        { id: 'two', start: 5, end: 8, source: 'two', translated: '二' },
+      ],
+    }))
+
+    expect(stats.sourceWordCount).toBe(2)
+    expect(stats.translatedWordCount).toBe(2)
+    expect(stats.untranslatedWordCount).toBe(0)
+    expect(stats.translatedPercentage).toBe(100)
   })
 
   it('returns zero values for an empty project', () => {
