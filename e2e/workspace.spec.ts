@@ -157,6 +157,21 @@ test('creates a new project immediately with the default title', async ({ page }
   await expect(page.getByLabel('新しいプロジェクト名')).toHaveCount(0)
 })
 
+test('shows explanations for sidebar project action icons', async ({ page }) => {
+  const openSidebar = page.getByRole('button', { name: 'プロジェクト一覧を開く' })
+  if (await openSidebar.isVisible()) await openSidebar.click()
+  const projectItem = page.locator('.project-item').filter({ hasText: 'はじめてのプロジェクト' })
+  await projectItem.hover()
+
+  const edit = projectItem.getByRole('button', { name: '「はじめてのプロジェクト」のタイトルを編集' })
+  await edit.hover()
+  await expect(edit.getByRole('tooltip')).toHaveText('タイトルを編集')
+
+  const remove = projectItem.getByRole('button', { name: '「はじめてのプロジェクト」を削除' })
+  await remove.hover()
+  await expect(remove.getByRole('tooltip')).toHaveText('プロジェクトを削除')
+})
+
 test('edits project information and reflects languages in both views', async ({ page }) => {
   await page.getByRole('button', { name: 'プロジェクト情報を表示' }).click()
   const dialog = page.getByRole('dialog', { name: 'プロジェクト情報' })
@@ -504,8 +519,16 @@ test('highlights and scrolls to a registered source range when editing', async (
   await page.getByRole('textbox', { name: '訳文' }).fill('対象')
   await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
 
+  const pair = page.locator('.pair-card').filter({ hasText: '対象' })
+  const edit = pair.getByRole('button', { name: 'この対訳を編集' })
+  await edit.hover()
+  await expect(edit.getByRole('tooltip')).toHaveText('編集')
+  const remove = pair.getByRole('button', { name: 'この対訳を削除' })
+  await remove.hover()
+  await expect(remove.getByRole('tooltip')).toHaveText('削除')
+
   await source.evaluate((element: HTMLTextAreaElement) => { element.scrollTop = 0 })
-  await page.getByRole('button', { name: 'この対訳を編集' }).click()
+  await edit.click()
 
   await expect(page.locator('.selected-source-range')).toHaveText('Target text')
   await expect.poll(() => source.evaluate((element: HTMLTextAreaElement) => element.scrollTop)).toBeGreaterThan(0)
@@ -541,7 +564,10 @@ test('keeps the source update strategy and caret until the source loses focus', 
 })
 
 test('shows translation markup help and renders semantic translation styles', async ({ page }) => {
-  await page.getByRole('button', { name: '訳文の記法を確認' }).click()
+  const helpButton = page.getByRole('button', { name: '訳文の記法を確認' })
+  await helpButton.hover()
+  await expect(helpButton.getByRole('tooltip')).toHaveText('訳文記法ヘルプ')
+  await helpButton.click()
   const help = page.getByRole('dialog', { name: '訳文の記法' })
   await expect(help).toBeVisible()
   await expect(help.getByText('**テキスト**', { exact: true })).toBeVisible()

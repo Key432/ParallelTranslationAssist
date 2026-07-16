@@ -197,7 +197,9 @@ export function TranslationWorkspace({
           </div>
           <div className="panel-footer translation-footer">
             <div className="translation-footer-tools">
-              <button className="translation-help-button footer-tool-button" onClick={() => setMarkupHelpOpen(true)} aria-label="訳文の記法を確認">?</button>
+              <button className="translation-help-button footer-tool-button icon-tooltip-button" onClick={() => setMarkupHelpOpen(true)} aria-label="訳文の記法を確認">
+                <span aria-hidden="true">?</span><span className="icon-button-tooltip" role="tooltip">訳文記法ヘルプ</span>
+              </button>
               <AiTranslationButton loading={ai.loading} error={ai.error} canGenerate={ai.canGenerate} hasApiKey={ai.hasApiKey} onGenerate={ai.onGenerate} />
               <button className="translation-keyword-button footer-tool-button" onClick={() => setKeywordModalOpen(true)} aria-label="キーワード追加">
                 <span aria-hidden="true">+</span><span className="translation-keyword-tooltip">キーワード追加</span>

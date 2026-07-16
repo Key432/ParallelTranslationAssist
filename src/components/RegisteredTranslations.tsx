@@ -69,8 +69,12 @@ export function RegisteredTranslations({
             <p className="pair-source" lang={projectLanguageLocale(originalLanguage)}>{item.source}</p>
             <p className="pair-translation" lang={projectLanguageLocale(translatedLanguage)}><FormattedTranslation>{item.translated}</FormattedTranslation></p>
             <div className="pair-actions">
-              <button aria-label="この対訳を編集" onClick={() => onEditTranslation(item.id)}>✎</button>
-              <button aria-label="この対訳を削除" onClick={() => onDeleteTranslation(item.id)}>×</button>
+              <button className="icon-tooltip-button" aria-label="この対訳を編集" onClick={() => onEditTranslation(item.id)}>
+                <span aria-hidden="true">✎</span><span className="icon-button-tooltip" role="tooltip">編集</span>
+              </button>
+              <button className="icon-tooltip-button" aria-label="この対訳を削除" onClick={() => onDeleteTranslation(item.id)}>
+                <span aria-hidden="true">×</span><span className="icon-button-tooltip" role="tooltip">削除</span>
+              </button>
             </div>
           </article>
         ))}

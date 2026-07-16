@@ -64,8 +64,12 @@ export function ProjectSidebar({ projects, open, sidebarRef, activeProjectId, on
                   <span className="project-meta">{project.source.length.toLocaleString()} 字 · {project.translations.length} 訳</span>
                 </button>
                 <div className="project-actions">
-                  <button onClick={() => { setEditingId(project.id); setEditingTitle(project.title) }} aria-label={`「${project.title}」のタイトルを編集`}>✎</button>
-                  <button onClick={() => onDelete(project)} aria-label={`「${project.title}」を削除`}>×</button>
+                  <button className="icon-tooltip-button" onClick={() => { setEditingId(project.id); setEditingTitle(project.title) }} aria-label={`「${project.title}」のタイトルを編集`}>
+                    <span aria-hidden="true">✎</span><span className="icon-button-tooltip" role="tooltip">タイトルを編集</span>
+                  </button>
+                  <button className="icon-tooltip-button" onClick={() => onDelete(project)} aria-label={`「${project.title}」を削除`}>
+                    <span aria-hidden="true">×</span><span className="icon-button-tooltip" role="tooltip">プロジェクトを削除</span>
+                  </button>
                 </div>
               </>
             )}

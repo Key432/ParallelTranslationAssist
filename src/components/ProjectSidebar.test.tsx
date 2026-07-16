@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { ProjectSidebar } from './ProjectSidebar'
 
 describe('ProjectSidebar', () => {
@@ -20,6 +20,8 @@ describe('ProjectSidebar', () => {
 
     expect(screen.getByText('Alice')).toBeInTheDocument()
     expect(screen.getByText('翻訳中')).toHaveClass('project-status')
+    expect(within(screen.getByRole('button', { name: '「Alice」のタイトルを編集' })).getByRole('tooltip')).toHaveTextContent('タイトルを編集')
+    expect(within(screen.getByRole('button', { name: '「Alice」を削除' })).getByRole('tooltip')).toHaveTextContent('プロジェクトを削除')
   })
 
   test('creates a project immediately from the add button', () => {

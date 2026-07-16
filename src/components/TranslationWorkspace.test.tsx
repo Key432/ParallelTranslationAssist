@@ -1,5 +1,5 @@
 import { createRef } from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { TranslationWorkspace } from './TranslationWorkspace'
 
 const informationProps = {
@@ -83,6 +83,7 @@ describe('TranslationWorkspace', () => {
     expect(workspace.style.getPropertyValue('--source-font-family')).toBe("'Noto Serif', serif")
     expect(workspace.style.getPropertyValue('--translated-font-family')).toBe("'Noto Serif JP', serif")
     const footerTools = screen.getByRole('button', { name: '訳文の記法を確認' }).parentElement
+    expect(within(screen.getByRole('button', { name: '訳文の記法を確認' })).getByRole('tooltip')).toHaveTextContent('訳文記法ヘルプ')
     expect(footerTools).toHaveClass('translation-footer-tools')
     expect(footerTools?.querySelectorAll('button')).toHaveLength(3)
     expect(Array.from(footerTools?.querySelectorAll('button') ?? []).map((button) => button.getAttribute('aria-label'))).toEqual([

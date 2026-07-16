@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { RegisteredTranslations } from './RegisteredTranslations'
 
 const translations = [
@@ -21,6 +21,12 @@ function renderList() {
 }
 
 describe('RegisteredTranslations', () => {
+  test('labels edit and delete icon buttons with hover explanations', () => {
+    renderList()
+    expect(within(screen.getAllByRole('button', { name: 'この対訳を編集' })[0]).getByRole('tooltip')).toHaveTextContent('編集')
+    expect(within(screen.getAllByRole('button', { name: 'この対訳を削除' })[0]).getByRole('tooltip')).toHaveTextContent('削除')
+  })
+
   test('applies, updates, and clears a source filter', () => {
     const { container } = renderList()
     const search = screen.getByRole('textbox', { name: '検索文字列' })
