@@ -6,6 +6,7 @@ import { SourceEditor } from './SourceEditor'
 import { TranslationMarkupHelpModal } from './TranslationMarkupHelpModal'
 import { TranslationKeywordModal } from './TranslationKeywordModal'
 import { RegisteredTranslations } from './RegisteredTranslations'
+import { UntranslatedNavigation } from './UntranslatedNavigation'
 
 type Props = {
   title: string
@@ -33,6 +34,10 @@ type Props = {
   onOpenStatistics: () => void
   onOpenInformation: (focusTitle?: boolean) => void
   onCaptureSelection: () => void
+  hasUntranslatedRanges: boolean
+  untranslatedNavigationDisabled: boolean
+  onPreviousUntranslated: () => void
+  onNextUntranslated: () => void
   onDraftChange: (draft: string) => void
   onSaveTranslation: () => void
   onCancelSelection: () => void
@@ -69,6 +74,10 @@ export function TranslationWorkspace({
   onOpenStatistics,
   onOpenInformation,
   onCaptureSelection,
+  hasUntranslatedRanges,
+  untranslatedNavigationDisabled,
+  onPreviousUntranslated,
+  onNextUntranslated,
   onDraftChange,
   onSaveTranslation,
   onCancelSelection,
@@ -122,9 +131,16 @@ export function TranslationWorkspace({
             <span className="count">{source.length.toLocaleString()} 字</span>
           </div>
           <SourceEditor source={source} translations={translations} keywords={keywords} selection={highlightedSelection ?? selection} sourceRef={sourceRef} onSourceChange={onSourceChange} onBlur={onSourceBlur} />
-          <div className="panel-footer">
-            <span>選択範囲は訳文と一対一で登録されます</span>
-            <button className="primary" onClick={onCaptureSelection}>選択範囲を翻訳 <span>→</span></button>
+          <div className="panel-footer source-footer">
+            <div className="source-footer-actions">
+              <UntranslatedNavigation
+                hasUntranslatedRanges={hasUntranslatedRanges}
+                disabled={untranslatedNavigationDisabled}
+                onPrevious={onPreviousUntranslated}
+                onNext={onNextUntranslated}
+              />
+              <button className="primary" onClick={onCaptureSelection}>選択範囲を翻訳 <span>→</span></button>
+            </div>
           </div>
         </article>
 

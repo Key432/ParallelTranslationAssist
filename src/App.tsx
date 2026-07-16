@@ -9,6 +9,7 @@ import { Reader } from './components/Reader'
 import { TranslationWorkspace } from './components/TranslationWorkspace'
 import { calculateTextEdit, findExactTranslation, findOverlappingTranslations, findTranslationsAffectedByEdit, mergeTranslationTexts, reconcileTranslationsAfterEdit, sortTranslations, updateTranslationText } from './domain/translations'
 import type { TextEdit } from './domain/translations'
+import { buildUntranslatedRanges, findNextUntranslatedRange, findPreviousUntranslatedRange } from './domain/untranslatedRanges'
 import { useWorkspace } from './hooks/useWorkspace'
 import { useOutsideClick } from './hooks/useOutsideClick'
 import type { Project, ProjectInformation, Selection, TextSelectionRange, ViewMode } from './types'
@@ -72,6 +73,7 @@ function App() {
   const translations = workspace.activeProject?.translations ?? []
   const keywords = workspace.activeProject?.keywords ?? []
   const sortedTranslations = useMemo(() => sortTranslations(translations), [translations])
+  const untranslatedRanges = useMemo(() => buildUntranslatedRanges(source, translations), [source, translations])
   const closeSidebar = useCallback(() => setSidebarOpen(false), [])
 
   useOutsideClick(sidebarRef, closeSidebar, sidebarOpen, '[data-sidebar-toggle]')
@@ -174,6 +176,26 @@ function App() {
     setSelection(nextSelection)
     setDraft('')
     setEditingTranslationId(null)
+    window.setTimeout(() => translationRef.current?.focus(), 0)
+  }
+
+  const navigateUntranslated = (direction: 'previous' | 'next') => {
+    if (draft.length > 0 || editingTranslationId || pendingSourceUpdate) return
+    const field = sourceRef.current
+    const position = selection
+      ? (direction === 'next' ? selection.end : selection.start)
+      : field
+        ? (direction === 'next' ? field.selectionEnd : field.selectionStart)
+        : 0
+    const range = direction === 'next'
+      ? findNextUntranslatedRange(untranslatedRanges, position)
+      : findPreviousUntranslatedRange(untranslatedRanges, position)
+    if (!range) return
+
+    setSelection({ ...range, text: source.slice(range.start, range.end) })
+    setDraft('')
+    setEditingTranslationId(null)
+    field?.setSelectionRange(range.start, range.end)
     window.setTimeout(() => translationRef.current?.focus(), 0)
   }
 
@@ -494,6 +516,10 @@ function App() {
               onOpenStatistics={() => { setInformationMode(null); setStatisticsOpen(true) }}
               onOpenInformation={(focusTitle = false) => { setStatisticsOpen(false); setInformationMode(focusTitle ? 'title' : 'default') }}
               onCaptureSelection={captureSelection}
+              hasUntranslatedRanges={untranslatedRanges.length > 0}
+              untranslatedNavigationDisabled={draft.length > 0 || Boolean(editingTranslationId) || Boolean(pendingSourceUpdate)}
+              onPreviousUntranslated={() => navigateUntranslated('previous')}
+              onNextUntranslated={() => navigateUntranslated('next')}
               onDraftChange={setDraft}
               onSaveTranslation={saveTranslation}
               onCancelSelection={() => { setSelection(null); setDraft(''); setEditingTranslationId(null) }}

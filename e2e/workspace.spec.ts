@@ -96,6 +96,61 @@ test('registers a translation from a source selection and updates progress', asy
   await expect(dialog.getByText('未翻訳 1語')).toBeVisible()
 })
 
+test('navigates untranslated ranges in both directions, wraps, focuses input, and completes whitespace-only gaps', async ({ page }) => {
+  const source = page.getByRole('textbox', { name: '翻訳する原文' })
+  await source.fill('One Two Three Four')
+
+  for (const pair of [
+    { start: 4, end: 7, translated: '二' },
+    { start: 14, end: 18, translated: '四' },
+  ]) {
+    await source.evaluate((element: HTMLTextAreaElement, range) => {
+      element.focus()
+      element.setSelectionRange(range.start, range.end)
+    }, pair)
+    await page.getByRole('button', { name: '選択範囲を翻訳 →' }).click()
+    await page.getByRole('textbox', { name: '訳文' }).fill(pair.translated)
+    await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
+  }
+
+  const previous = page.getByRole('button', { name: '← 前の未翻訳' })
+  const next = page.getByRole('button', { name: '次の未翻訳 →' })
+  const sourceFooter = page.locator('.source-footer')
+  const footerBox = await sourceFooter.boundingBox()
+  const previousBox = await previous.boundingBox()
+  if (!footerBox || !previousBox) throw new Error('原文フッターの表示位置を取得できませんでした。')
+  expect(previousBox.x - footerBox.x).toBeLessThan(50)
+
+  await next.click()
+  await expect(page.locator('.selected-source-range')).toHaveText('One')
+  await expect(page.getByRole('textbox', { name: '訳文' })).toBeFocused()
+
+  await next.click()
+  await expect(page.locator('.selected-source-range')).toHaveText('Three')
+  await previous.click()
+  await expect(page.locator('.selected-source-range')).toHaveText('One')
+
+  await page.getByRole('textbox', { name: '訳文' }).fill('一')
+  await expect(next).toBeDisabled()
+  await expect(previous).toBeDisabled()
+  await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
+
+  await next.click()
+  await expect(page.locator('.selected-source-range')).toHaveText('Three')
+  await page.getByRole('textbox', { name: '訳文' }).fill('三')
+  await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
+
+  const completeStatus = page.getByText('すべて翻訳済みです')
+  await expect(completeStatus).toBeVisible()
+  const completeBox = await completeStatus.boundingBox()
+  if (!completeBox) throw new Error('翻訳完了表示の位置を取得できませんでした。')
+  const completedNextBox = await next.boundingBox()
+  if (!completedNextBox) throw new Error('未翻訳移動ボタンの位置を取得できませんでした。')
+  expect(completeBox.x).toBeGreaterThan(completedNextBox.x + completedNextBox.width)
+  await expect(next).toBeDisabled()
+  await expect(previous).toBeDisabled()
+})
+
 test('registers, updates, displays, and deletes a project keyword', async ({ page }) => {
   const source = page.getByRole('textbox', { name: '翻訳する原文' })
   await source.fill('Translation translates translation.')

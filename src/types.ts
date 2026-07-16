@@ -53,4 +53,9 @@ export type Selection = {
 
 export type TextSelectionRange = Pick<Selection, 'start' | 'end'>
 
+export type TextRange = {
+  start: number
+  end: number
+}
+
 export type ViewMode = 'edit' | 'read'

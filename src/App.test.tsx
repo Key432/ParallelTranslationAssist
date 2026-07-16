@@ -61,6 +61,37 @@ describe('App translation editing', () => {
     })
   })
 
+  test('selects the next untranslated range and focuses an empty translation input', async () => {
+    await renderApp()
+
+    fireEvent.click(screen.getByRole('button', { name: '次の未翻訳 →' }))
+
+    expect(document.querySelector('.selected-source-range')).toHaveTextContent('world')
+    const translationInput = screen.getByRole('textbox', { name: '訳文' })
+    expect(translationInput).toHaveValue('')
+    await waitFor(() => expect(translationInput).toHaveFocus())
+
+    fireEvent.change(translationInput, { target: { value: '世界' } })
+    expect(screen.getByRole('button', { name: '次の未翻訳 →' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '← 前の未翻訳' })).toBeDisabled()
+  })
+
+  test('shows translation completion when only whitespace remains outside translations', async () => {
+    await renderApp({
+      projects: [{
+        ...defaultProjectInformation,
+        id: 'project-1', title: 'Project', status: '翻訳中', source: ' Hello \n',
+        translations: [{ id: 'translation-1', start: 1, end: 6, source: 'Hello', translated: 'こんにちは' }],
+        updatedAt: '2026-07-16T01:00:00.000Z',
+      }],
+      activeProjectId: 'project-1',
+    })
+
+    expect(screen.getByRole('status')).toHaveTextContent('すべて翻訳済みです')
+    expect(screen.getByRole('button', { name: '次の未翻訳 →' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '← 前の未翻訳' })).toBeDisabled()
+  })
+
   test('stores translation keywords in the active project only', async () => {
     await renderApp()
     fireEvent.click(screen.getByRole('button', { name: 'キーワード追加' }))

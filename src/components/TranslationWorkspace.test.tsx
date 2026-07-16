@@ -11,6 +11,10 @@ const informationProps = {
   onAddKeyword: jest.fn(),
   onUpdateKeyword: jest.fn(),
   onDeleteKeyword: jest.fn(),
+  hasUntranslatedRanges: true,
+  untranslatedNavigationDisabled: false,
+  onPreviousUntranslated: jest.fn(),
+  onNextUntranslated: jest.fn(),
 }
 
 describe('TranslationWorkspace', () => {
@@ -48,6 +52,7 @@ describe('TranslationWorkspace', () => {
     )
 
     expect(screen.getByRole('heading', { name: '文学作品A' })).toBeInTheDocument()
+    expect(screen.queryByText('選択範囲は訳文と一対一で登録されます')).not.toBeInTheDocument()
     const status = screen.getByRole('combobox', { name: 'プロジェクトステータス' })
     expect(status).toHaveValue('翻訳中')
     fireEvent.change(status, { target: { value: '初稿完了' } })
