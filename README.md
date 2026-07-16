@@ -28,6 +28,8 @@
 - 出典URLは任意です。登録するとタイトル下へ「🔗 Source」リンクを表示し、別タブで出典を開きます。
 - 原文言語の初期値は`ENGLISH`、翻訳言語の初期値は`JAPANESE`です。選択肢は`ENGLISH`、`JAPANESE`、`DEUTSCH`、`RUSSIAN`、`FRENCH`、`GREEK`、`CHINESE`、`KOREAN`です。
 - 情報画面の言語選択肢にはNoto Color Emojiの国旗を表示します。選択した言語名は、編集画面の原文・訳文欄と閲覧画面の見出しへ国旗なしで反映します。
+- 原文・訳文それぞれの選択言語に応じてNoto Serifファミリーを適用します。日本語はNoto Serif JP、中国語はNoto Serif SC、韓国語はNoto Serif KR、そのほかの対応言語はNoto Serifを使用します。
+- 選択言語のフォントは、原文・訳文の入力欄、選択中の原文、登録済み対訳、AI下訳候補、閲覧画面へ一貫して反映します。Google Fontsのフォントファイルは、画面で実際に使用するファミリーが必要になったときにブラウザが読み込みます。
 
 ### 対訳の登録
 
@@ -103,7 +105,7 @@ AI翻訳支援を実行した場合、ユーザーが選択した原文、原文
 - APIキー無効、権限不足、利用上限、レート制限、タイムアウト、通信失敗、不正なAI応答を個別に表示します。エラーが発生しても、現在の原文選択、入力中の訳文、登録済み対訳、変更履歴は変更しません。
 - 開発・テストではOpenAI APIを完全にモックし、実APIキーや実際のOpenAI APIを使用しません。
 
-開発時は`npm run dev`、ビルド結果の確認時は`npm run preview`を使用します。本番ビルドは静的ファイルとして配信でき、AI翻訳のためのNodeサーバーや環境変数は不要です。OpenAI APIへの接続を許可するContent Security Policyを維持してください。
+開発時は`npm run dev`、ビルド結果の確認時は`npm run preview`を使用します。本番ビルドは静的ファイルとして配信でき、AI翻訳のためのNodeサーバーや環境変数は不要です。OpenAI APIへの接続を許可するContent Security Policyを維持してください。HTMLのmeta CSPには、metaでは無効となる`frame-ancestors`を指定しません。フレーム埋め込みを禁止する場合は、配信環境のHTTPレスポンスヘッダーで`Content-Security-Policy: frame-ancestors 'none'`を設定してください。
 
 ### 登録済み範囲を含む選択
 

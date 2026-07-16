@@ -36,5 +36,8 @@ describe('Reader', () => {
     expect(screen.getByRole('link', { name: '🔗 Source' })).toHaveAttribute('href', 'https://example.com/source')
     expect(screen.getByText('1 件の訳文 · 未訳部分も原文の流れに沿って表示')).toHaveClass('reader-summary')
     expect(screen.queryByRole('button', { name: 'タイトルを編集: Project' })).not.toBeInTheDocument()
+    const reader = screen.getByText('ORIGINAL · FRENCH').closest('.reader') as HTMLElement
+    expect(reader.style.getPropertyValue('--source-font-family')).toBe("'Noto Serif', serif")
+    expect(reader.style.getPropertyValue('--translated-font-family')).toBe("'Noto Serif KR', serif")
   })
 })

@@ -25,6 +25,13 @@ export function projectLanguageLocale(language: ProjectLanguage): string {
   return PROJECT_LANGUAGES.find((option) => option.value === language)?.locale ?? 'en'
 }
 
+export function projectLanguageFontFamily(language: ProjectLanguage): string {
+  if (language === 'JAPANESE') return "'Noto Serif JP', serif"
+  if (language === 'CHINESE') return "'Noto Serif SC', serif"
+  if (language === 'KOREAN') return "'Noto Serif KR', serif"
+  return "'Noto Serif', serif"
+}
+
 export function createProject(title: string, source = '', updatedAt = new Date().toISOString()): Project {
   return {
     id: crypto.randomUUID(),

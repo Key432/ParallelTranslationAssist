@@ -79,6 +79,9 @@ describe('TranslationWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'タイトルを編集: 文学作品A' }))
     expect(onOpenInformation).toHaveBeenCalledWith(true)
     expect(screen.queryByText(/原文から一文/)).not.toBeInTheDocument()
+    const workspace = screen.getByLabelText('翻訳編集')
+    expect(workspace.style.getPropertyValue('--source-font-family')).toBe("'Noto Serif', serif")
+    expect(workspace.style.getPropertyValue('--translated-font-family')).toBe("'Noto Serif JP', serif")
     const footerTools = screen.getByRole('button', { name: '訳文の記法を確認' }).parentElement
     expect(footerTools).toHaveClass('translation-footer-tools')
     expect(footerTools?.querySelectorAll('button')).toHaveLength(3)

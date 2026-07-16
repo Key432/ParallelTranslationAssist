@@ -1,5 +1,6 @@
 import { buildReaderRows } from '../domain/translations'
-import { projectLanguageLocale } from '../domain/projects'
+import { projectLanguageFontFamily, projectLanguageLocale } from '../domain/projects'
+import type { CSSProperties } from 'react'
 import type { ProjectLanguage, Translation } from '../types'
 import { FormattedTranslation } from './FormattedTranslation'
 
@@ -15,9 +16,13 @@ type Props = {
 }
 
 export function Reader({ title, author, sourceUrl, source, translations, originalLanguage, translatedLanguage, onEdit }: Props) {
+  const languageFontStyle = {
+    '--source-font-family': projectLanguageFontFamily(originalLanguage),
+    '--translated-font-family': projectLanguageFontFamily(translatedLanguage),
+  } as CSSProperties
   if (translations.length === 0) {
     return (
-      <section className="reader empty-reader">
+      <section className="reader empty-reader" style={languageFontStyle}>
         <p className="project-kicker">{title}</p>
         <p className="eyebrow">PARALLEL READING</p>
         <h1>まだ対訳がありません。</h1>
@@ -29,7 +34,7 @@ export function Reader({ title, author, sourceUrl, source, translations, origina
 
   const rows = buildReaderRows(source, translations)
   return (
-    <section className="reader">
+    <section className="reader" style={languageFontStyle}>
       <div className="reader-heading">
         <div>
           <p className="project-kicker">原文と訳文</p>

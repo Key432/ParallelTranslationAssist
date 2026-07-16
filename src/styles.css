@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Libre+Caslon+Text:wght@400;700&family=Noto+Serif+JP:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@200..900&family=Noto+Serif+KR:wght@200..900&family=Noto+Serif+SC:wght@200..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Libre+Caslon+Text:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap');
 
 :root {
@@ -135,7 +136,7 @@ h1 { font-family: 'Libre Caslon Text', 'Noto Serif JP', serif; font-size: clamp(
 .lang { border-left: 1px solid var(--line); padding-left: 10px; }
 .translation-form > textarea { resize: none; width: 100%; border: 0; outline: 0; background: transparent; padding: 34px; color: var(--ink); line-height: 1.85; }
 .source-editor { position: relative; min-height: 0; overflow: hidden; }
-.source-editor textarea, .source-highlight { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; border: 0; padding: 34px; overflow-x: auto; overflow-y: scroll; scrollbar-gutter: stable; scrollbar-width: thin; white-space: pre-wrap; overflow-wrap: break-word; font: 17px/1.9 'Libre Caslon Text', serif; letter-spacing: normal; }
+.source-editor textarea, .source-highlight { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; border: 0; padding: 34px; overflow-x: auto; overflow-y: scroll; scrollbar-gutter: stable; scrollbar-width: thin; white-space: pre-wrap; overflow-wrap: break-word; font: 17px/1.9 var(--source-font-family, 'Noto Serif', serif); letter-spacing: normal; }
 .source-editor textarea::-webkit-scrollbar, .source-highlight::-webkit-scrollbar { width: 10px; height: 10px; }
 .source-highlight { pointer-events: none; color: var(--ink); scrollbar-color: transparent transparent; }
 .source-highlight::-webkit-scrollbar-thumb, .source-highlight::-webkit-scrollbar-track { background: transparent; }
@@ -177,9 +178,9 @@ h1 { font-family: 'Libre Caslon Text', 'Noto Serif JP', serif; font-size: clamp(
 .empty-state p { font-size: 11px; line-height: 1.8; margin: 0; }
 .translation-form { display: grid; grid-template-rows: auto 1fr; min-height: 0; }
 .translation-content { min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; overflow: hidden; }
-.translation-form blockquote { margin: 24px 28px 0; border-left: 2px solid var(--accent); padding: 12px 16px; background: #eeeae1; font: 12px/1.7 'Libre Caslon Text', serif; max-height: 120px; overflow: auto; }
+.translation-form blockquote { margin: 24px 28px 0; border-left: 2px solid var(--accent); padding: 12px 16px; background: #eeeae1; font: 12px/1.7 var(--source-font-family, 'Noto Serif', serif); max-height: 120px; overflow: auto; }
 .translation-form blockquote span { display: block; font: 9px 'DM Sans', sans-serif; letter-spacing: .13em; color: var(--accent); margin-bottom: 7px; }
-.translation-form > textarea { font: 16px/1.9 'Noto Serif JP', serif; min-height: 180px; }
+.translation-form > textarea { font: 16px/1.9 var(--translated-font-family, 'Noto Serif', serif); min-height: 180px; }
 .translation-panel { position: relative; }
 .translation-keyword-button { width: 30px; height: 30px; padding: 0; display: grid; place-items: center; border: 1px solid #bdbab0; border-radius: 50%; background: var(--paper); color: var(--ink); cursor: pointer; font: 300 19px/1 'DM Sans', sans-serif; }
 .translation-keyword-button:hover { border-color: var(--accent); color: var(--accent); }
@@ -195,7 +196,7 @@ h1 { font-family: 'Libre Caslon Text', 'Noto Serif JP', serif; font-size: clamp(
 .ai-loading p, .ai-error { margin: 0; font-size: 11px; }
 .ai-error { color: #a84832; line-height: 1.7; }
 .ai-candidate > span { display: block; margin-bottom: 8px; color: #73558a; font-size: 9px; font-weight: 600; letter-spacing: .12em; }
-.ai-candidate > p { margin: 0; white-space: pre-wrap; font: 14px/1.85 'Noto Serif JP', serif; }
+.ai-candidate > p { margin: 0; white-space: pre-wrap; font: 14px/1.85 var(--translated-font-family, 'Noto Serif', serif); }
 .ai-warnings { margin-top: 13px; border-left: 2px solid #b98243; padding: 8px 12px; background: #f8f0df; color: #765b38; font-size: 10px; }
 .ai-warnings strong { font-size: 10px; }
 .ai-warnings ul { margin: 5px 0 0; padding-left: 18px; line-height: 1.7; }
@@ -243,8 +244,8 @@ h1 { font-family: 'Libre Caslon Text', 'Noto Serif JP', serif; font-size: clamp(
 .pair-card { display: grid; grid-template-columns: 45px 1fr 1fr 58px; gap: 28px; align-items: start; padding: 26px 8px; border-bottom: 1px solid var(--line); transition: background .18s ease; }
 .pair-card.editing { background: #efe9df; }
 .pair-card p { margin: 0; font-size: 14px; line-height: 1.8; }
-.pair-card .pair-source { font-family: 'Libre Caslon Text', serif; }
-.pair-card .pair-translation { font-family: 'Noto Serif JP', serif; }
+.pair-card .pair-source { font-family: var(--source-font-family, 'Noto Serif', serif); }
+.pair-card .pair-translation { font-family: var(--translated-font-family, 'Noto Serif', serif); }
 .formatted-translation ruby { ruby-position: over; }
 .formatted-translation rt { font-size: .55em; line-height: 1; }
 .pair-number { font: 10px 'DM Sans'; color: var(--accent); padding-top: 5px; }
@@ -258,8 +259,8 @@ h1 { font-family: 'Libre Caslon Text', 'Noto Serif JP', serif; font-size: clamp(
 .reader-label span { font-size: 9px; letter-spacing: .16em; color: var(--muted); }
 .reader-row { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 70px; padding: 36px 0 38px 58px; border-bottom: 1px solid var(--line); }
 .reader-row p { margin: 0; line-height: 1.95; white-space: pre-wrap; }
-.reader-row .reader-source { font: 17px/1.95 'Libre Caslon Text', serif; }
-.reader-row .reader-translation { font: 15px/2 'Noto Serif JP', serif; }
+.reader-row .reader-source { font: 17px/1.95 var(--source-font-family, 'Noto Serif', serif); }
+.reader-row .reader-translation { font: 15px/2 var(--translated-font-family, 'Noto Serif', serif); }
 .row-number { position: absolute; top: 41px; left: 6px; color: var(--accent); font-size: 9px; }
 .reader-row.untranslated { opacity: .42; }
 .empty-reader { text-align: center; display: flex; min-height: 65vh; flex-direction: column; align-items: center; justify-content: center; }

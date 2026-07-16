@@ -1,5 +1,5 @@
-import { useState, type RefObject } from 'react'
-import { PROJECT_STATUSES } from '../domain/projects'
+import { useState, type CSSProperties, type RefObject } from 'react'
+import { PROJECT_STATUSES, projectLanguageFontFamily, projectLanguageLocale } from '../domain/projects'
 import type { ProjectLanguage, ProjectStatus, Selection, TextSelectionRange, Translation, TranslationKeyword } from '../types'
 import { HistoryControls } from './HistoryControls'
 import { SourceEditor } from './SourceEditor'
@@ -106,9 +106,13 @@ export function TranslationWorkspace({
 }: Props) {
   const [markupHelpOpen, setMarkupHelpOpen] = useState(false)
   const [keywordModalOpen, setKeywordModalOpen] = useState(false)
+  const languageFontStyle = {
+    '--source-font-family': projectLanguageFontFamily(originalLanguage),
+    '--translated-font-family': projectLanguageFontFamily(translatedLanguage),
+  } as CSSProperties
 
   return (
-    <section className="workspace" aria-label="翻訳編集">
+    <section className="workspace" aria-label="翻訳編集" style={languageFontStyle}>
       <div className="intro">
         <div>
           <div className="workspace-controls">
@@ -169,13 +173,14 @@ export function TranslationWorkspace({
           <div className="translation-content">
             {selection ? (
               <div className="translation-form">
-                <blockquote><span>{editingTranslationId ? '編集中の原文' : '選択した原文'}</span>{selection.text}</blockquote>
+                <blockquote lang={projectLanguageLocale(originalLanguage)}><span>{editingTranslationId ? '編集中の原文' : '選択した原文'}</span>{selection.text}</blockquote>
                 <textarea
                   ref={translationRef}
                   value={draft}
                   onChange={(event) => onDraftChange(event.target.value)}
                   placeholder="訳文を入力します…"
                   aria-label="訳文"
+                  lang={projectLanguageLocale(translatedLanguage)}
                   onKeyDown={(event) => {
                     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') onSaveTranslation()
                   }}

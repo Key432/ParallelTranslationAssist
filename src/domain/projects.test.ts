@@ -1,4 +1,4 @@
-import { PROJECT_LANGUAGES, PROJECT_STATUSES, createProject, isProjectStatus, normalizeProject } from './projects'
+import { PROJECT_LANGUAGES, PROJECT_STATUSES, createProject, isProjectStatus, normalizeProject, projectLanguageFontFamily } from './projects'
 
 describe('project domain', () => {
   test('creates a project with the not-started status', () => {
@@ -19,6 +19,15 @@ describe('project domain', () => {
       'ENGLISH', 'JAPANESE', 'DEUTSCH', 'RUSSIAN', 'FRENCH', 'GREEK', 'CHINESE', 'KOREAN',
     ])
     expect(PROJECT_LANGUAGES.every(({ flag }) => flag.length > 0)).toBe(true)
+  })
+
+  test('maps project languages to the corresponding Noto Serif family', () => {
+    expect(projectLanguageFontFamily('JAPANESE')).toBe("'Noto Serif JP', serif")
+    expect(projectLanguageFontFamily('CHINESE')).toBe("'Noto Serif SC', serif")
+    expect(projectLanguageFontFamily('KOREAN')).toBe("'Noto Serif KR', serif")
+    for (const language of ['ENGLISH', 'DEUTSCH', 'RUSSIAN', 'FRENCH', 'GREEK'] as const) {
+      expect(projectLanguageFontFamily(language)).toBe("'Noto Serif', serif")
+    }
   })
 
   test('defines all supported statuses', () => {

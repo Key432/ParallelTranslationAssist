@@ -5,6 +5,12 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'はじめてのプロジェクト' })).toBeVisible()
 })
 
+test('uses only directives supported by a meta Content Security Policy', async ({ page }) => {
+  const policy = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content')
+  expect(policy).toContain("connect-src 'self' https://api.openai.com")
+  expect(policy).not.toContain('frame-ancestors')
+})
+
 test('opens the project statistics dashboard', async ({ page }) => {
   await page.getByRole('button', { name: 'プロジェクト統計を表示' }).click()
 
@@ -48,14 +54,19 @@ test('edits project information and reflects languages in both views', async ({ 
   await expect(page.locator('.translation-panel .lang')).toHaveText('KOREAN')
 
   const source = page.getByRole('textbox', { name: '翻訳する原文' })
+  await expect.poll(() => source.evaluate((element) => getComputedStyle(element).fontFamily)).toContain('Noto Serif')
   await source.fill('Bonjour monde')
   await source.evaluate((element: HTMLTextAreaElement) => {
     element.focus()
     element.setSelectionRange(0, 7)
   })
   await page.getByRole('button', { name: '選択範囲を翻訳 →' }).click()
-  await page.getByRole('textbox', { name: '訳文' }).fill('안녕하세요')
+  const translatedInput = page.getByRole('textbox', { name: '訳文' })
+  await expect.poll(() => translatedInput.evaluate((element) => getComputedStyle(element).fontFamily)).toContain('Noto Serif KR')
+  await translatedInput.fill('안녕하세요')
   await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
+  await expect.poll(() => page.locator('.pair-source').evaluate((element) => getComputedStyle(element).fontFamily)).toContain('Noto Serif')
+  await expect.poll(() => page.locator('.pair-translation').evaluate((element) => getComputedStyle(element).fontFamily)).toContain('Noto Serif KR')
   await page.getByRole('button', { name: '閲覧' }).click()
   await expect(page.getByRole('heading', { name: 'Les Misérables' })).toBeVisible()
   await expect(page.getByText('原文と訳文')).toHaveClass(/project-kicker/)
@@ -65,6 +76,8 @@ test('edits project information and reflects languages in both views', async ({ 
   await expect(page.getByRole('button', { name: 'プロジェクト情報を表示' })).toHaveCount(0)
   await expect(page.getByText('ORIGINAL · FRENCH')).toBeVisible()
   await expect(page.getByText('TRANSLATION · KOREAN')).toBeVisible()
+  await expect.poll(() => page.locator('.reader-source').first().evaluate((element) => getComputedStyle(element).fontFamily)).toContain('Noto Serif')
+  await expect.poll(() => page.locator('.reader-translation').first().evaluate((element) => getComputedStyle(element).fontFamily)).toContain('Noto Serif KR')
 })
 
 test('opens title editing from the workspace title', async ({ page }) => {
