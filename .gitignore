@@ -8,3 +8,6 @@ vite.config.d.ts
 !.env.example
 .DS_Store
 Thumbs.db
+playwright-report/
+test-results/
+blob-report/

@@ -189,11 +189,14 @@ npm run dev
 
 ```sh
 npm test -- --runInBand
+npm run test:e2e
 npm run build
 ```
 
 - 単体テストにはJest、ts-jest、Testing Libraryを使用しています。
-- Huskyのコミット前フックがJestを実行し、テスト失敗時はコミットを中止します。
+- ブラウザ上の主要な利用フローはPlaywright E2Eテストで確認します。初回は`npx playwright install chromium`でテスト用ブラウザをインストールしてください。
+- Huskyのコミット前フックがJestとPlaywright E2Eテストを実行し、いずれかが失敗した場合はコミットを中止します。
+- GitHub ActionsでもJest、Playwright E2Eテスト、本番ビルドがすべて成功した場合だけGitHub Pagesへデプロイします。
 - 機能や仕様を変更した場合は、テストとこのREADMEを同時に更新してください。
 
 ## GitHub Pages
