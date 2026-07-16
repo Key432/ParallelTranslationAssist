@@ -95,6 +95,7 @@ describe('App translation editing', () => {
 
     expect(screen.getByRole('heading', { name: 'Updated title' })).toBeInTheDocument()
     expect(screen.getByText('Sample Author', { exact: false })).toHaveTextContent('by Sample Author')
+    expect(screen.getByText('Sample Author', { exact: false })).toHaveClass('project-author')
     expect(screen.getByRole('link', { name: '🔗 Source' })).toHaveAttribute('href', 'https://example.com/source')
     expect(screen.getByRole('link', { name: '🔗 Source' })).toHaveAttribute('target', '_blank')
     expect(screen.getAllByText('Updated title')).toHaveLength(2)

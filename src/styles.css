@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Libre+Caslon+Text:wght@400;700&family=Noto+Serif+JP:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap');
 
 :root {
   font-family: 'DM Sans', system-ui, sans-serif;
@@ -111,6 +112,7 @@ h1 { font-family: 'Libre Caslon Text', 'Noto Serif JP', serif; font-size: clamp(
 .editable-project-title:hover { color: var(--accent); }
 .editable-project-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
 .project-attribution { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 10px; color: var(--ink); font-size: 10px; letter-spacing: .08em; }
+.project-author { font: 400 14px 'Libre Caslon Text', 'Noto Serif JP', serif; letter-spacing: normal; }
 .project-attribution a { color: var(--ink); text-decoration-color: #bcb8ad; text-underline-offset: 3px; }
 .project-attribution a:hover { color: var(--accent); }
 
@@ -229,7 +231,9 @@ footer { border-top: 1px solid var(--line); margin-top: auto; padding: 25px clam
 .information-modal label { display: grid; gap: 8px; }
 .information-modal label > span { color: var(--ink); font-size: 11px; font-weight: 600; letter-spacing: .04em; }
 .information-modal label > span small { margin-left: 7px; color: var(--muted); font-size: 8px; font-weight: 400; }
-.information-modal input, .information-modal select { width: 100%; min-width: 0; border: 1px solid #c9c5ba; border-radius: 3px; background: white; padding: 11px 12px; color: var(--ink); font: 12px 'DM Sans', 'Noto Serif JP', sans-serif; outline: 0; }
+.information-modal input, .information-modal select { width: 100%; min-width: 0; border: 1px solid #c9c5ba; border-radius: 3px; background: white; padding: 11px 12px; color: var(--ink); font-size: 12px; outline: 0; }
+.information-modal input { font-family: 'DM Sans', 'Noto Serif JP', sans-serif; }
+.information-modal select { font-family: 'Noto Color Emoji', 'DM Sans', 'Noto Serif JP', sans-serif; }
 .information-modal input:focus, .information-modal select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px #d8624018; }
 .information-language-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .information-actions { margin-top: 6px; }

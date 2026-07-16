@@ -82,7 +82,7 @@ export function TranslationWorkspace({
           <h1><button className="editable-project-title" onClick={() => onOpenInformation(true)} aria-label={`タイトルを編集: ${title}`}>{title}</button></h1>
           {(author || sourceUrl) && (
             <div className="project-attribution">
-              {author && <span>by {author}</span>}
+              {author && <span className="project-author">by {author}</span>}
               {sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer">🔗 Source</a>}
             </div>
           )}
