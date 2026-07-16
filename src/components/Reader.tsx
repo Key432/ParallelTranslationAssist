@@ -41,7 +41,7 @@ export function Reader({ title, author, sourceUrl, source, translations, origina
             </div>
           )}
         </div>
-        <p>{translations.length} 件の訳文 · 未訳部分も原文の流れに沿って表示</p>
+        <p className="reader-summary">{translations.length} 件の訳文 · 未訳部分も原文の流れに沿って表示</p>
       </div>
       <div className="reader-table">
         <div className="reader-label"><span>ORIGINAL · {originalLanguage}</span><span>TRANSLATION · {translatedLanguage}</span></div>

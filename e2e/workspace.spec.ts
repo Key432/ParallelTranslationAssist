@@ -118,6 +118,29 @@ test('highlights and scrolls to a registered source range when editing', async (
   await expect.poll(() => source.evaluate((element: HTMLTextAreaElement) => element.scrollTop)).toBeGreaterThan(0)
 })
 
+test('excludes the application header and reader summary when printing', async ({ page }) => {
+  const source = page.getByRole('textbox', { name: '翻訳する原文' })
+  await source.fill('Hello')
+  await source.evaluate((element: HTMLTextAreaElement) => {
+    element.focus()
+    element.setSelectionRange(0, 5)
+  })
+  await page.getByRole('button', { name: '選択範囲を翻訳 →' }).click()
+  await page.getByRole('textbox', { name: '訳文' }).fill('こんにちは')
+  await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
+  await page.getByRole('button', { name: '閲覧' }).click()
+
+  const header = page.locator('.topbar')
+  const summary = page.getByText('1 件の訳文 · 未訳部分も原文の流れに沿って表示')
+  await expect(header).toBeVisible()
+  await expect(summary).toBeVisible()
+
+  await page.emulateMedia({ media: 'print' })
+  await expect(header).toBeHidden()
+  await expect(summary).toBeHidden()
+  await expect(page.getByText('こんにちは', { exact: true })).toBeVisible()
+})
+
 test('keeps undo history after reloading the browser', async ({ page }) => {
   const status = page.getByRole('combobox', { name: 'プロジェクトステータス' })
   await status.selectOption('完了')

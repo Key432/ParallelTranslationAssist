@@ -34,6 +34,7 @@ describe('Reader', () => {
     expect(screen.getByText('原文と訳文')).toHaveClass('project-kicker')
     expect(screen.getByText('by Author Name')).toHaveClass('project-author')
     expect(screen.getByRole('link', { name: '🔗 Source' })).toHaveAttribute('href', 'https://example.com/source')
+    expect(screen.getByText('1 件の訳文 · 未訳部分も原文の流れに沿って表示')).toHaveClass('reader-summary')
     expect(screen.queryByRole('button', { name: 'タイトルを編集: Project' })).not.toBeInTheDocument()
   })
 })

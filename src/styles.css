@@ -287,3 +287,7 @@ footer { border-top: 1px solid var(--line); margin-top: auto; padding: 25px clam
   .information-modal { padding: 24px 18px; }
   .information-language-grid { grid-template-columns: 1fr; }
 }
+
+@media print {
+  .topbar, .reader-summary { display: none !important; }
+}
