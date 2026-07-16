@@ -13,7 +13,7 @@ function createActions(): jest.Mocked<TransferActions> {
 
 describe('ProjectTransferControls', () => {
   test('shows project import before source import', () => {
-    render(<ProjectTransferControls actions={createActions()} disabled={false} />)
+    render(<ProjectTransferControls actions={createActions()} disabled={false} onShare={jest.fn()} />)
     fireEvent.click(screen.getByRole('button', { name: 'インポート' }))
 
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
@@ -24,7 +24,7 @@ describe('ProjectTransferControls', () => {
 
   test('reads supported source and project files', async () => {
     const actions = createActions()
-    render(<ProjectTransferControls actions={actions} disabled={false} />)
+    render(<ProjectTransferControls actions={actions} disabled={false} onShare={jest.fn()} />)
     const sourceFile = new File(['Source'], 'source.md', { type: 'text/markdown' })
     const projectFile = new File(['{}'], 'project.json', { type: 'application/json' })
     Object.defineProperty(sourceFile, 'text', { value: () => Promise.resolve('Source') })
@@ -43,7 +43,7 @@ describe('ProjectTransferControls', () => {
     ['対訳をテキストでエクスポート', 'exportParallelText'],
   ] as const)('runs %s from the export menu', (label, actionName) => {
     const actions = createActions()
-    render(<ProjectTransferControls actions={actions} disabled={false} />)
+    render(<ProjectTransferControls actions={actions} disabled={false} onShare={jest.fn()} />)
     fireEvent.click(screen.getByRole('button', { name: 'エクスポート' }))
     fireEvent.click(screen.getByRole('menuitem', { name: label }))
     expect(actions[actionName]).toHaveBeenCalledTimes(1)

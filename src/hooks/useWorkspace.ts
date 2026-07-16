@@ -86,6 +86,14 @@ export function useWorkspace() {
     return project
   }, [])
 
+  const addExistingProject = useCallback((project: Project) => {
+    setWorkspace((current) => ({
+      projects: [...current.projects, project],
+      activeProjectId: project.id,
+      histories: { ...current.histories, [project.id]: emptyProjectHistory() },
+    }))
+  }, [])
+
   const renameProject = useCallback((id: string, title: string) => {
     setWorkspace((current) => updateProjectInWorkspace(current, id, (project) => ({ ...project, title }), true))
   }, [])
@@ -154,6 +162,7 @@ export function useWorkspace() {
     setActiveProjectId,
     updateActiveProject,
     addProject,
+    addExistingProject,
     renameProject,
     deleteProject,
     undoActiveProject,

@@ -12,9 +12,10 @@ export type TransferActions = {
 type Props = {
   actions: TransferActions
   disabled: boolean
+  onShare: () => void
 }
 
-export function ProjectTransferControls({ actions, disabled }: Props) {
+export function ProjectTransferControls({ actions, disabled, onShare }: Props) {
   const [openMenu, setOpenMenu] = useState<'import' | 'export' | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const sourceInputRef = useRef<HTMLInputElement>(null)
@@ -34,6 +35,7 @@ export function ProjectTransferControls({ actions, disabled }: Props) {
 
   return (
     <div className="transfer-controls" ref={containerRef}>
+      <button className="header-action" disabled={disabled} onClick={onShare}>共有</button>
       <div className="transfer-menu">
         <button className="header-action" disabled={disabled} aria-expanded={openMenu === 'import'} onClick={() => setOpenMenu((menu) => menu === 'import' ? null : 'import')}>インポート</button>
         {openMenu === 'import' && (

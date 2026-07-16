@@ -79,3 +79,16 @@ export type AiTranslationResponse = {
 export type AiConnectionStatus = 'empty' | 'unchecked' | 'checking' | 'available' | 'invalid' | 'quota' | 'error'
 
 export type ViewMode = 'edit' | 'read'
+
+export type SharedProjectV1 = {
+  v: 1
+  t: string
+  a?: string
+  u?: string
+  ol: ProjectLanguage
+  tl: ProjectLanguage
+  st: ProjectStatus
+  s: string
+  tr: Array<[start: number, end: number, translated: string]>
+  k: Array<[source: string, translated: string]>
+}

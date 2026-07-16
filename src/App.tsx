@@ -8,6 +8,10 @@ import { ProjectStatisticsModal } from './components/ProjectStatisticsModal'
 import { Reader } from './components/Reader'
 import { TranslationWorkspace } from './components/TranslationWorkspace'
 import { AiApiKeySettings } from './components/AiApiKeySettings'
+import { ProjectShareModal } from './components/ProjectShareModal'
+import { SharedProjectErrorModal } from './components/SharedProjectErrorModal'
+import { SharedProjectPreviewModal } from './components/SharedProjectPreviewModal'
+import { SharedProjectReader } from './components/SharedProjectReader'
 import { calculateTextEdit, findExactTranslation, findOverlappingTranslations, findTranslationsAffectedByEdit, mergeTranslationTexts, reconcileTranslationsAfterEdit, sortTranslations, updateTranslationText } from './domain/translations'
 import type { TextEdit } from './domain/translations'
 import { buildUntranslatedRanges, findNextUntranslatedRange, findPreviousUntranslatedRange } from './domain/untranslatedRanges'
@@ -16,6 +20,8 @@ import { useWorkspace } from './hooks/useWorkspace'
 import { useOutsideClick } from './hooks/useOutsideClick'
 import { useAiApiKey } from './hooks/useAiApiKey'
 import { useAiTranslation } from './hooks/useAiTranslation'
+import { useSharedProject } from './hooks/useSharedProject'
+import { restoreSharedProject } from './domain/sharedProject'
 import type { Project, ProjectInformation, Selection, TextSelectionRange, ViewMode } from './types'
 import { downloadFile } from './services/browserFiles'
 import { buildParallelText, buildTranslationsText, parseProjectFile, safeFileName, serializeProject } from './services/projectTransfer'
@@ -38,6 +44,7 @@ function App() {
   const workspace = useWorkspace()
   const aiApiKey = useAiApiKey()
   const aiTranslation = useAiTranslation()
+  const sharedProject = useSharedProject()
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 800)
   const [selection, setSelection] = useState<Selection | null>(null)
   const [draft, setDraft] = useState('')
@@ -52,6 +59,8 @@ function App() {
   const [informationMode, setInformationMode] = useState<'default' | 'title' | null>(null)
   const [pendingAiReplace, setPendingAiReplace] = useState(false)
   const [aiSettingsOpen, setAiSettingsOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [temporaryProject, setTemporaryProject] = useState<Project | null>(null)
   const sourceRef = useRef<HTMLTextAreaElement>(null)
   const translationRef = useRef<HTMLTextAreaElement>(null)
   const sidebarRef = useRef<HTMLElement>(null)
@@ -464,6 +473,14 @@ function App() {
     downloadFile(`${safeFileName(workspace.activeProject.title)}.pta.json`, serializeProject(workspace.activeProject), 'application/json;charset=utf-8')
   }
 
+  const addSharedProject = (project: Project) => {
+    workspace.addExistingProject(project)
+    sharedProject.clearShared()
+    setTemporaryProject(null)
+    setView('edit')
+    setNotice('共有プロジェクトを追加しました')
+  }
+
   const exportTranslationsFile = () => {
     if (!workspace.activeProject) return
     downloadFile(`${safeFileName(workspace.activeProject.title)}-translations.txt`, buildTranslationsText(workspace.activeProject), 'text/plain;charset=utf-8')
@@ -511,7 +528,7 @@ function App() {
     <div className="app-shell">
       <AppHeader
         view={view}
-        hasActiveProject={Boolean(workspace.activeProject)}
+        hasActiveProject={Boolean(workspace.activeProject) && !temporaryProject}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         onViewChange={(nextView) => {
@@ -520,6 +537,7 @@ function App() {
           setView(nextView)
         }}
         onClear={clearActiveProject}
+        onShare={() => setShareOpen(true)}
         transferActions={{
           importSource: importSourceFile,
           importProject: importProjectFile,
@@ -542,7 +560,13 @@ function App() {
           onOpenAiSettings={() => setAiSettingsOpen(true)}
         />
         <main id="top">
-          {!workspace.activeProject ? (
+          {temporaryProject ? (
+            <SharedProjectReader
+              project={temporaryProject}
+              onClose={() => setTemporaryProject(null)}
+              onAdd={() => addSharedProject(temporaryProject)}
+            />
+          ) : !workspace.activeProject ? (
             <EmptyProjects onCreate={addProject} />
           ) : view === 'edit' ? (
             <TranslationWorkspace
@@ -709,6 +733,26 @@ function App() {
           onSave={saveProjectInformation}
         />
       )}
+      {shareOpen && workspace.activeProject && (
+        <ProjectShareModal
+          project={workspace.activeProject}
+          onClose={() => setShareOpen(false)}
+          onCopied={() => setNotice('共有リンクをコピーしました')}
+          onSaveFile={exportProjectFile}
+        />
+      )}
+      {sharedProject.shared && !temporaryProject && (
+        <SharedProjectPreviewModal
+          shared={sharedProject.shared}
+          onCancel={sharedProject.clearShared}
+          onReadOnly={() => {
+            setTemporaryProject(restoreSharedProject(sharedProject.shared as NonNullable<typeof sharedProject.shared>))
+            sharedProject.clearShared()
+          }}
+          onAdd={() => addSharedProject(restoreSharedProject(sharedProject.shared as NonNullable<typeof sharedProject.shared>))}
+        />
+      )}
+      {sharedProject.error && <SharedProjectErrorModal unsupported={sharedProject.error === 'unsupported'} onClose={sharedProject.clearError} />}
       {notice && <div className="toast" role="status">{notice}</div>}
     </div>
   )

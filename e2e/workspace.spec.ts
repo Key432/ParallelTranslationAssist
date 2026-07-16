@@ -1,8 +1,134 @@
 import { expect, test } from '@playwright/test'
 
+async function readWorkspace(page: import('@playwright/test').Page) {
+  return page.evaluate(async () => await new Promise<{ projects: Array<{ id: string; title: string; source: string; translations: Array<{ id: string }>; keywords: Array<{ id: string }> }> }>((resolve, reject) => {
+    const request = indexedDB.open('parallel-translation-assist', 1)
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => {
+      const database = request.result
+      const transaction = database.transaction('workspace', 'readonly')
+      const get = transaction.objectStore('workspace').get('current')
+      get.onerror = () => reject(get.error)
+      get.onsuccess = () => { resolve(get.result); database.close() }
+    }
+  }))
+}
+
+async function createProjectShareLink(page: import('@playwright/test').Page, context: import('@playwright/test').BrowserContext) {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'http://127.0.0.1:4173' })
+  await page.getByRole('button', { name: 'プロジェクト情報を表示' }).click()
+  const information = page.getByRole('dialog', { name: 'プロジェクト情報' })
+  await information.getByLabel('Title 必須').fill('共有E2Eプロジェクト')
+  await information.getByLabel('Original Language').selectOption('ENGLISH')
+  await information.getByLabel('Translated Language').selectOption('JAPANESE')
+  await information.getByRole('button', { name: '情報を保存' }).click()
+
+  const source = page.getByRole('textbox', { name: '翻訳する原文' })
+  await source.fill('Hello shared world')
+  await source.evaluate((element: HTMLTextAreaElement) => { element.focus(); element.setSelectionRange(0, 5) })
+  await page.getByRole('button', { name: '選択範囲を翻訳 →' }).click()
+  await page.getByRole('textbox', { name: '訳文' }).fill('こんにちは')
+  await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
+
+  await page.getByRole('button', { name: 'キーワード追加' }).click()
+  const keyword = page.getByRole('dialog', { name: '訳語キーワード' })
+  await keyword.getByRole('textbox', { name: '原語', exact: true }).fill('world')
+  await keyword.getByRole('textbox', { name: '訳語', exact: true }).fill('世界')
+  await keyword.getByRole('button', { name: '登録' }).click()
+  await keyword.getByRole('button', { name: '訳語キーワードを閉じる' }).click()
+
+  await page.getByRole('button', { name: '共有', exact: true }).click()
+  const share = page.getByRole('dialog', { name: 'プロジェクトを共有' })
+  await expect(share).toContainText('18 文字')
+  await expect(share).toContainText('1 件')
+  await expect(share.getByRole('button', { name: 'リンクをコピー' })).toBeEnabled()
+  await share.getByRole('button', { name: 'リンクをコピー' }).click()
+  await expect(page.locator('.toast')).toContainText('共有リンクをコピーしました')
+  return page.evaluate(() => navigator.clipboard.readText())
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'はじめてのプロジェクト' })).toBeVisible()
+})
+
+test('shares one project and safely adds it as a new project', async ({ page, context }) => {
+  const shareUrl = await createProjectShareLink(page, context)
+  expect(shareUrl).toContain('#share=v1.')
+  expect(shareUrl).not.toContain('Hello shared world')
+  await expect.poll(async () => (await readWorkspace(page)).projects[0].translations.length).toBe(1)
+  const before = await readWorkspace(page)
+  expect(before.projects).toHaveLength(1)
+
+  const receivingPage = await context.newPage()
+  await receivingPage.goto(shareUrl)
+  const preview = receivingPage.getByRole('dialog', { name: '共有されたプロジェクト' })
+  await expect(preview).toBeVisible()
+  await expect(preview).toContainText('共有E2Eプロジェクト')
+  await expect(preview).toContainText('🇬🇧 ENGLISH')
+  await expect(preview).toContainText('🇯🇵 JAPANESE')
+  await expect(preview).toContainText('18 文字')
+  await expect(preview).toContainText('1 件')
+  await expect.poll(() => receivingPage.evaluate(() => location.hash)).toBe('')
+  expect((await readWorkspace(receivingPage)).projects).toHaveLength(1)
+
+  await preview.getByRole('button', { name: '新しいプロジェクトとして追加' }).click()
+  await expect(receivingPage.getByRole('heading', { name: '共有E2Eプロジェクト' })).toBeVisible()
+  await expect(receivingPage.getByRole('textbox', { name: '翻訳する原文' })).toHaveValue('Hello shared world')
+  await expect(receivingPage.getByText('こんにちは', { exact: true })).toBeVisible()
+  await receivingPage.getByRole('button', { name: 'キーワード追加' }).click()
+  const keywords = receivingPage.getByRole('dialog', { name: '訳語キーワード' })
+  await keywords.getByRole('tab', { name: /一覧/ }).click()
+  await expect(keywords.getByText('world', { exact: true })).toBeVisible()
+  await expect(keywords.getByText('世界', { exact: true })).toBeVisible()
+
+  await expect.poll(async () => (await readWorkspace(receivingPage)).projects.length).toBe(2)
+  const after = await readWorkspace(receivingPage)
+  expect(after.projects[0]).toMatchObject({ id: before.projects[0].id, source: before.projects[0].source })
+  expect(after.projects[1].id).not.toBe(before.projects[0].id)
+  expect(after.projects[1].translations[0].id).not.toBe(before.projects[0].translations[0].id)
+  expect(after.projects[1].keywords[0].id).not.toBe(before.projects[0].keywords[0].id)
+})
+
+test('opens a shared project read-only without persisting it', async ({ page, context }) => {
+  const shareUrl = await createProjectShareLink(page, context)
+  const receivingPage = await context.newPage()
+  await receivingPage.goto(shareUrl)
+  await receivingPage.getByRole('dialog', { name: '共有されたプロジェクト' }).getByRole('button', { name: '閲覧のみ' }).click()
+  await expect(receivingPage.getByLabel('一時閲覧')).toContainText('このプロジェクトは保存されていません')
+  await expect(receivingPage.getByRole('heading', { name: '共有E2Eプロジェクト' })).toBeVisible()
+  await expect(receivingPage.getByRole('button', { name: 'プロジェクトに追加' })).toBeVisible()
+  expect((await readWorkspace(receivingPage)).projects).toHaveLength(1)
+
+  await receivingPage.reload()
+  await expect(receivingPage.getByLabel('一時閲覧')).toHaveCount(0)
+  expect((await readWorkspace(receivingPage)).projects).toHaveLength(1)
+})
+
+test('rejects an invalid shared link without changing saved projects', async ({ page }) => {
+  const before = await readWorkspace(page)
+  await page.goto('/#share=v1.invalid-payload')
+  await page.reload()
+  await expect(page.getByRole('alertdialog', { name: '共有リンクを読み取れませんでした。' })).toBeVisible()
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('')
+  expect(await readWorkspace(page)).toEqual(before)
+})
+
+test('disables an oversized share link and remains usable at mobile width', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  let seed = 123456789
+  const largeSource = Array.from({ length: 24_000 }, () => {
+    seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5
+    return String.fromCharCode(33 + ((seed >>> 0) % 90))
+  }).join('')
+  await page.getByRole('textbox', { name: '翻訳する原文' }).fill(largeSource)
+  await page.getByRole('button', { name: '共有', exact: true }).click()
+  const share = page.getByRole('dialog', { name: 'プロジェクトを共有' })
+  await expect(share).toBeVisible()
+  await expect(share.getByText(/プロジェクトが大きいため共有リンクを作成できません/)).toBeVisible()
+  await expect(share.getByRole('button', { name: 'リンクをコピー' })).toBeDisabled()
+  await expect(share.getByRole('button', { name: 'プロジェクトファイルを保存' })).toBeVisible()
+  await expect(share.getByRole('button', { name: '閉じる' })).toBeVisible()
 })
 
 test('uses only directives supported by a meta Content Security Policy', async ({ page }) => {
