@@ -1,37 +1,49 @@
-import { LEGACY_STORAGE_KEY, STORAGE_KEY, loadWorkspaceState, saveWorkspaceState } from './workspaceStorage'
+import { IDBFactory } from 'fake-indexeddb'
+import { loadWorkspaceState, saveWorkspaceState } from './workspaceStorage'
 import type { WorkspaceState } from '../types'
 
-function storageWith(values: Record<string, string | null>) {
-  return { getItem: jest.fn((key: string) => values[key] ?? null) }
-}
-
 describe('workspace storage', () => {
-  test('loads a valid workspace and repairs an invalid active project id', () => {
-    const projects = [{ id: 'project-1', title: 'Test', source: 'Source', translations: [] }]
-    const storage = storageWith({ [STORAGE_KEY]: JSON.stringify({ projects, activeProjectId: 'missing' }) })
+  beforeEach(() => {
+    localStorage.clear()
+    Object.defineProperty(globalThis, 'indexedDB', {
+      configurable: true,
+      value: new IDBFactory(),
+    })
+  })
 
-    expect(loadWorkspaceState(storage)).toEqual({
-      projects: [{ ...projects[0], status: '未着手' }],
+  test('loads a saved workspace and repairs an invalid active project id', async () => {
+    const state = {
+      projects: [{ id: 'project-1', title: 'Test', status: '翻訳中' as const, source: 'Source', translations: [] }],
+      activeProjectId: 'missing',
+    }
+    await saveWorkspaceState(state)
+
+    expect(await loadWorkspaceState()).toEqual({
+      projects: state.projects,
       activeProjectId: 'project-1',
     })
   })
 
-  test('migrates legacy source and translations into a project', () => {
-    const translation = { id: 't1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' }
-    const storage = storageWith({
-      [STORAGE_KEY]: null,
-      [LEGACY_STORAGE_KEY]: JSON.stringify({ source: 'Hello', translations: [translation] }),
-    })
+  test('persists the complete workspace in IndexedDB', async () => {
+    const state: WorkspaceState = {
+      projects: [{ id: 'project-1', title: 'Test', status: '完了', source: 'Source', translations: [] }],
+      activeProjectId: 'project-1',
+    }
 
-    const state = loadWorkspaceState(storage)
-    expect(state.projects[0]).toMatchObject({ title: 'マイプロジェクト', source: 'Hello', translations: [translation] })
-    expect(state.activeProjectId).toBe(state.projects[0].id)
+    await saveWorkspaceState(state)
+
+    expect(await loadWorkspaceState()).toEqual(state)
   })
 
-  test('serializes the complete workspace', () => {
-    const state: WorkspaceState = { projects: [], activeProjectId: null }
-    const storage = { setItem: jest.fn() }
-    saveWorkspaceState(state, storage)
-    expect(storage.setItem).toHaveBeenCalledWith(STORAGE_KEY, JSON.stringify(state))
+  test('creates an initial workspace without migrating LocalStorage data', async () => {
+    localStorage.setItem('parallel-translation-assist:v2', JSON.stringify({
+      projects: [{ id: 'legacy', title: 'Legacy', status: '完了', source: 'Old', translations: [] }],
+      activeProjectId: 'legacy',
+    }))
+
+    const state = await loadWorkspaceState()
+
+    expect(state.projects[0].title).toBe('はじめてのプロジェクト')
+    expect(state.projects.some((project) => project.id === 'legacy')).toBe(false)
   })
 })

@@ -1,25 +1,38 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { IDBFactory } from 'fake-indexeddb'
 import App from './App'
-import { STORAGE_KEY } from './services/workspaceStorage'
+import { loadWorkspaceState, saveWorkspaceState } from './services/workspaceStorage'
 import { serializeProject } from './services/projectTransfer'
+import type { WorkspaceState } from './types'
+
+const defaultWorkspace: WorkspaceState = {
+  projects: [{
+    id: 'project-1',
+    title: 'Project',
+    status: '翻訳中',
+    source: 'Hello world',
+    translations: [{ id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' }],
+  }],
+  activeProjectId: 'project-1',
+}
+
+async function renderApp(state: WorkspaceState = defaultWorkspace) {
+  await saveWorkspaceState(state)
+  render(<App />)
+  await screen.findByRole('textbox', { name: '翻訳する原文' })
+}
 
 describe('App translation editing', () => {
   beforeEach(() => {
     localStorage.clear()
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      projects: [{
-        id: 'project-1',
-        title: 'Project',
-        status: '翻訳中',
-        source: 'Hello world',
-        translations: [{ id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' }],
-      }],
-      activeProjectId: 'project-1',
-    }))
+    Object.defineProperty(globalThis, 'indexedDB', {
+      configurable: true,
+      value: new IDBFactory(),
+    })
   })
 
-  test('loads an existing translation into the workspace and updates it', () => {
-    render(<App />)
+  test('loads an existing translation into the workspace and updates it', async () => {
+    await renderApp()
 
     fireEvent.click(screen.getByRole('button', { name: 'この対訳を編集' }))
     const translatedText = screen.getByRole('textbox', { name: '訳文' })
@@ -30,10 +43,13 @@ describe('App translation editing', () => {
 
     expect(screen.getByText('やあ')).toBeInTheDocument()
     expect(screen.queryByText('こんにちは')).not.toBeInTheDocument()
+    await waitFor(async () => {
+      expect((await loadWorkspaceState()).projects[0].translations[0].translated).toBe('やあ')
+    })
   })
 
-  test('automatically edits a translation when the selected range matches exactly', () => {
-    render(<App />)
+  test('automatically edits a translation when the selected range matches exactly', async () => {
+    await renderApp()
     const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' }) as HTMLTextAreaElement
     sourceText.setSelectionRange(0, 5)
 
@@ -43,8 +59,8 @@ describe('App translation editing', () => {
     expect(screen.getByText('編集中の原文')).toBeInTheDocument()
   })
 
-  test('confirms before discarding a partially overlapping translation', () => {
-    render(<App />)
+  test('confirms before discarding a partially overlapping translation', async () => {
+    await renderApp()
     const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' }) as HTMLTextAreaElement
     sourceText.setSelectionRange(0, 6)
 
@@ -61,8 +77,8 @@ describe('App translation editing', () => {
     expect(screen.getByRole('textbox', { name: '訳文' })).toHaveValue('')
   })
 
-  test('keeps and merges registered translation text for a new overlapping range', () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+  test('keeps and merges registered translation text for a new overlapping range', async () => {
+    await renderApp({
       projects: [{
         id: 'project-1', title: 'Project', status: '翻訳中', source: 'Hello world',
         translations: [
@@ -71,8 +87,7 @@ describe('App translation editing', () => {
         ],
       }],
       activeProjectId: 'project-1',
-    }))
-    render(<App />)
+    })
     const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' }) as HTMLTextAreaElement
     sourceText.setSelectionRange(0, 11)
 
@@ -83,8 +98,8 @@ describe('App translation editing', () => {
     expect(screen.queryByRole('button', { name: 'この対訳を編集' })).not.toBeInTheDocument()
   })
 
-  test('updates the source range in edit mode and discards another overlapping translation after confirmation', () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+  test('updates the source range in edit mode and discards another overlapping translation after confirmation', async () => {
+    await renderApp({
       projects: [{
         id: 'project-1',
         title: 'Project',
@@ -96,8 +111,7 @@ describe('App translation editing', () => {
         ],
       }],
       activeProjectId: 'project-1',
-    }))
-    render(<App />)
+    })
 
     const editButtons = screen.getAllByRole('button', { name: 'この対訳を編集' })
     fireEvent.click(editButtons[0])
@@ -120,8 +134,8 @@ describe('App translation editing', () => {
     expect(screen.getByRole('textbox', { name: '訳文' })).toHaveValue('こんにちは')
   })
 
-  test('merges other registered text into the current translation while editing', () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+  test('merges other registered text into the current translation while editing', async () => {
+    await renderApp({
       projects: [{
         id: 'project-1', title: 'Project', status: '翻訳中', source: 'Hello world',
         translations: [
@@ -130,8 +144,7 @@ describe('App translation editing', () => {
         ],
       }],
       activeProjectId: 'project-1',
-    }))
-    render(<App />)
+    })
     fireEvent.click(screen.getAllByRole('button', { name: 'この対訳を編集' })[0])
     const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' }) as HTMLTextAreaElement
     sourceText.setSelectionRange(0, 11)
@@ -144,8 +157,8 @@ describe('App translation editing', () => {
     expect(remainingEditButton.closest('.pair-card')).toHaveTextContent('Hello world')
   })
 
-  test('updates source outside translations without confirmation and preserves translated ranges', () => {
-    render(<App />)
+  test('updates source outside translations without confirmation and preserves translated ranges', async () => {
+    await renderApp()
     const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' })
 
     fireEvent.change(sourceText, { target: { value: 'XHello world' } })
@@ -155,8 +168,8 @@ describe('App translation editing', () => {
     expect(screen.getByRole('button', { name: 'この対訳を編集' }).closest('.pair-card')).toHaveTextContent('Hello')
   })
 
-  test('cancels a source update that would split a registered translation', () => {
-    render(<App />)
+  test('cancels a source update that would split a registered translation', async () => {
+    await renderApp()
     const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' })
     fireEvent.change(sourceText, { target: { value: 'Hallo world' } })
 
@@ -168,8 +181,8 @@ describe('App translation editing', () => {
     expect(screen.getByRole('button', { name: 'この対訳を編集' })).toBeInTheDocument()
   })
 
-  test('discards only split translations while preserving unaffected translations', () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+  test('discards only split translations while preserving unaffected translations', async () => {
+    await renderApp({
       projects: [{
         id: 'project-1', title: 'Project', status: '翻訳中', source: 'Hello world',
         translations: [
@@ -178,8 +191,7 @@ describe('App translation editing', () => {
         ],
       }],
       activeProjectId: 'project-1',
-    }))
-    render(<App />)
+    })
     const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' })
     fireEvent.change(sourceText, { target: { value: 'Hallo world' } })
 
@@ -192,8 +204,8 @@ describe('App translation editing', () => {
     expect(remainingCard).toHaveTextContent('世界')
   })
 
-  test('keeps translation text while updating its registered source', () => {
-    render(<App />)
+  test('keeps translation text while updating its registered source', async () => {
+    await renderApp()
     const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' })
     fireEvent.change(sourceText, { target: { value: 'Hallo world' } })
 
@@ -211,7 +223,7 @@ describe('App translation editing', () => {
   })
 
   test('appends an imported text file while preserving translations', async () => {
-    render(<App />)
+    await renderApp()
     const file = new File(['Imported'], 'source.md', { type: 'text/markdown' })
     Object.defineProperty(file, 'text', { value: () => Promise.resolve('Imported') })
     fireEvent.change(screen.getByTestId('source-file-input'), { target: { files: [file] } })
@@ -224,7 +236,7 @@ describe('App translation editing', () => {
   })
 
   test('overwrites source from an imported text file and removes translations', async () => {
-    render(<App />)
+    await renderApp()
     const file = new File(['Imported'], 'source.txt', { type: 'text/plain' })
     Object.defineProperty(file, 'text', { value: () => Promise.resolve('Imported') })
     fireEvent.change(screen.getByTestId('source-file-input'), { target: { files: [file] } })
@@ -237,7 +249,7 @@ describe('App translation editing', () => {
   })
 
   test('imports a complete project after overwrite confirmation', async () => {
-    render(<App />)
+    await renderApp()
     const importedProject = {
       id: 'imported', title: 'Imported project', status: '完了' as const, source: 'Imported source',
       translations: [{ id: 'imported-translation', start: 0, end: 8, source: 'Imported', translated: 'インポート済み' }],

@@ -354,6 +354,10 @@ function App() {
     downloadFile(`${safeFileName(workspace.activeProject.title)}-parallel.txt`, buildParallelText(workspace.activeProject), 'text/plain;charset=utf-8')
   }
 
+  if (!workspace.ready) {
+    return <div className="app-loading" role="status">保存データを読み込んでいます…</div>
+  }
+
   return (
     <div className="app-shell">
       <AppHeader

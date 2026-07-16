@@ -1,54 +1,87 @@
 import { createProject, normalizeProject } from '../domain/projects'
-import type { Translation, WorkspaceState } from '../types'
+import type { WorkspaceState } from '../types'
 
-export const STORAGE_KEY = 'parallel-translation-assist:v2'
-export const LEGACY_STORAGE_KEY = 'parallel-translation-assist:v1'
+export const DATABASE_NAME = 'parallel-translation-assist'
+export const DATABASE_VERSION = 1
+export const WORKSPACE_STORE = 'workspace'
+export const WORKSPACE_KEY = 'current'
 
 const SAMPLE = `Translation is not a matter of words only: it is a matter of making intelligible a whole culture. The translator must cross borders of language while preserving the rhythm, ambiguity, and texture of the original.
 
 Read the source closely. Select a sentence, a group of sentences, or an entire paragraph, then add your translation. Each pair will appear side by side in the reading view.`
-
-type LegacyState = {
-  source: string
-  translations: Translation[]
-}
 
 export function createInitialState(): WorkspaceState {
   const project = createProject('はじめてのプロジェクト', SAMPLE)
   return { projects: [project], activeProjectId: project.id }
 }
 
-export function loadWorkspaceState(storage: Pick<Storage, 'getItem'> = localStorage): WorkspaceState {
-  try {
-    const saved = storage.getItem(STORAGE_KEY)
-    if (saved) {
-      const parsed = JSON.parse(saved) as Partial<WorkspaceState>
-      const projects = Array.isArray(parsed.projects)
-        ? parsed.projects.map(normalizeProject).filter((project) => project !== null)
-        : []
-      const activeProjectId = projects.some((project) => project.id === parsed.activeProjectId)
-        ? parsed.activeProjectId as string
-        : projects[0]?.id ?? null
-      return { projects, activeProjectId }
+function openWorkspaceDatabase(factory: IDBFactory): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = factory.open(DATABASE_NAME, DATABASE_VERSION)
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(WORKSPACE_STORE)) {
+        request.result.createObjectStore(WORKSPACE_STORE)
+      }
     }
-
-    const legacy = storage.getItem(LEGACY_STORAGE_KEY)
-    if (legacy) {
-      const parsed = JSON.parse(legacy) as LegacyState
-      const project = createProject('マイプロジェクト', parsed.source ?? '')
-      project.translations = Array.isArray(parsed.translations) ? parsed.translations : []
-      return { projects: [project], activeProjectId: project.id }
-    }
-  } catch {
-    // Fall back to a valid initial workspace when stored data is unavailable.
-  }
-
-  return createInitialState()
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+    request.onblocked = () => reject(new Error('IndexedDBの接続がブロックされました。'))
+  })
 }
 
-export function saveWorkspaceState(
+function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+function transactionComplete(transaction: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => reject(transaction.error)
+    transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDBの処理が中断されました。'))
+  })
+}
+
+function normalizeWorkspace(value: unknown): WorkspaceState | null {
+  if (!value || typeof value !== 'object') return null
+  const saved = value as Partial<WorkspaceState>
+  if (!Array.isArray(saved.projects)) return null
+  const projects = saved.projects.map(normalizeProject).filter((project) => project !== null)
+  const activeProjectId = projects.some((project) => project.id === saved.activeProjectId)
+    ? saved.activeProjectId as string
+    : projects[0]?.id ?? null
+  return { projects, activeProjectId }
+}
+
+export async function loadWorkspaceState(factory: IDBFactory = indexedDB): Promise<WorkspaceState> {
+  let database: IDBDatabase | null = null
+  try {
+    database = await openWorkspaceDatabase(factory)
+    const transaction = database.transaction(WORKSPACE_STORE, 'readonly')
+    const [stored] = await Promise.all([
+      requestResult(transaction.objectStore(WORKSPACE_STORE).get(WORKSPACE_KEY)),
+      transactionComplete(transaction),
+    ])
+    return normalizeWorkspace(stored) ?? createInitialState()
+  } catch {
+    return createInitialState()
+  } finally {
+    database?.close()
+  }
+}
+
+export async function saveWorkspaceState(
   state: WorkspaceState,
-  storage: Pick<Storage, 'setItem'> = localStorage,
-): void {
-  storage.setItem(STORAGE_KEY, JSON.stringify(state))
+  factory: IDBFactory = indexedDB,
+): Promise<void> {
+  const database = await openWorkspaceDatabase(factory)
+  try {
+    const transaction = database.transaction(WORKSPACE_STORE, 'readwrite')
+    transaction.objectStore(WORKSPACE_STORE).put(state, WORKSPACE_KEY)
+    await transactionComplete(transaction)
+  } finally {
+    database.close()
+  }
 }

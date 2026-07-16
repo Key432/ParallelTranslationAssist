@@ -1,17 +1,34 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createProject } from '../domain/projects'
 import { loadWorkspaceState, saveWorkspaceState } from '../services/workspaceStorage'
 import type { Project } from '../types'
 
 export function useWorkspace() {
-  const initial = useMemo(loadWorkspaceState, [])
-  const [projects, setProjects] = useState(initial.projects)
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(initial.activeProjectId)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
+  const [ready, setReady] = useState(false)
+  const storageFactory = useRef(indexedDB)
+  const saveQueue = useRef(Promise.resolve())
   const activeProject = projects.find((project) => project.id === activeProjectId) ?? null
 
   useEffect(() => {
-    saveWorkspaceState({ projects, activeProjectId })
-  }, [projects, activeProjectId])
+    let active = true
+    void loadWorkspaceState(storageFactory.current).then((state) => {
+      if (!active) return
+      setProjects(state.projects)
+      setActiveProjectId(state.activeProjectId)
+      setReady(true)
+    })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    if (!ready) return
+    saveQueue.current = saveQueue.current
+      .catch(() => undefined)
+      .then(() => saveWorkspaceState({ projects, activeProjectId }, storageFactory.current))
+      .catch(() => undefined)
+  }, [projects, activeProjectId, ready])
 
   const updateActiveProject = useCallback((update: (project: Project) => Project) => {
     if (!activeProjectId) return
@@ -38,6 +55,7 @@ export function useWorkspace() {
   }, [])
 
   return {
+    ready,
     projects,
     activeProject,
     activeProjectId,
