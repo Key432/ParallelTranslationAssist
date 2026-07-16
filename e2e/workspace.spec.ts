@@ -132,6 +132,44 @@ test('registers, updates, displays, and deletes a project keyword', async ({ pag
   await expect(markedKeyword).toHaveCount(0)
 })
 
+test('filters registered translations by source and translated text', async ({ page }) => {
+  const source = page.getByRole('textbox', { name: '翻訳する原文' })
+  await source.fill('Hello world')
+
+  for (const pair of [
+    { start: 0, end: 5, translated: 'こんにちは' },
+    { start: 6, end: 11, translated: '世界' },
+  ]) {
+    await source.evaluate((element: HTMLTextAreaElement, range) => {
+      element.focus()
+      element.setSelectionRange(range.start, range.end)
+    }, pair)
+    await page.getByRole('button', { name: '選択範囲を翻訳 →' }).click()
+    await page.getByRole('textbox', { name: '訳文' }).fill(pair.translated)
+    await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
+  }
+
+  const registered = page.getByRole('region', { name: '登録済みの対訳' })
+  const search = registered.getByRole('textbox', { name: '検索文字列' })
+  await search.fill('Hello')
+  await registered.getByRole('button', { name: 'フィルター' }).click()
+  await expect(registered.locator('.pair-card')).toHaveCount(1)
+  await expect(registered.getByText('原文「Hello」: 1 / 2 件')).toBeVisible()
+
+  await search.fill('world')
+  await expect(registered.getByText('Hello', { exact: true })).toBeVisible()
+  await registered.getByRole('button', { name: '訳文' }).click()
+  await search.fill('世界')
+  await registered.getByRole('button', { name: 'フィルター' }).click()
+  await expect(registered.locator('.pair-card')).toHaveCount(1)
+  await expect(registered.getByText('world', { exact: true })).toBeVisible()
+  await expect(registered.getByText('訳文「世界」: 1 / 2 件')).toBeVisible()
+
+  await registered.getByRole('button', { name: '解除' }).click()
+  await expect(registered.locator('.pair-card')).toHaveCount(2)
+  await expect(search).toHaveValue('')
+})
+
 test('highlights and scrolls to a registered source range when editing', async ({ page }) => {
   const lines = Array.from({ length: 60 }, (_, index) => `Line ${index + 1}`).join('\n')
   const sourceText = `${lines}\nTarget text`

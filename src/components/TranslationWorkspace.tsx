@@ -1,11 +1,11 @@
 import { useState, type RefObject } from 'react'
-import { PROJECT_STATUSES, projectLanguageLocale } from '../domain/projects'
+import { PROJECT_STATUSES } from '../domain/projects'
 import type { ProjectLanguage, ProjectStatus, Selection, TextSelectionRange, Translation, TranslationKeyword } from '../types'
 import { HistoryControls } from './HistoryControls'
-import { FormattedTranslation } from './FormattedTranslation'
 import { SourceEditor } from './SourceEditor'
 import { TranslationMarkupHelpModal } from './TranslationMarkupHelpModal'
 import { TranslationKeywordModal } from './TranslationKeywordModal'
+import { RegisteredTranslations } from './RegisteredTranslations'
 
 type Props = {
   title: string
@@ -168,22 +168,14 @@ export function TranslationWorkspace({
       </div>
 
       {translations.length > 0 && (
-        <section className="recent">
-          <div className="section-title"><p className="eyebrow">REGISTERED PAIRS</p><h2>登録済みの対訳</h2></div>
-          <div className="pair-list">
-            {translations.map((item, index) => (
-              <article className={`pair-card ${editingTranslationId === item.id ? 'editing' : ''}`} key={item.id}>
-                <span className="pair-number">{String(index + 1).padStart(2, '0')}</span>
-                <p className="pair-source" lang={projectLanguageLocale(originalLanguage)}>{item.source}</p>
-                <p className="pair-translation" lang={projectLanguageLocale(translatedLanguage)}><FormattedTranslation>{item.translated}</FormattedTranslation></p>
-                <div className="pair-actions">
-                  <button aria-label="この対訳を編集" onClick={() => onEditTranslation(item.id)}>✎</button>
-                  <button aria-label="この対訳を削除" onClick={() => onDeleteTranslation(item.id)}>×</button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+        <RegisteredTranslations
+          translations={translations}
+          originalLanguage={originalLanguage}
+          translatedLanguage={translatedLanguage}
+          editingTranslationId={editingTranslationId}
+          onEditTranslation={onEditTranslation}
+          onDeleteTranslation={onDeleteTranslation}
+        />
       )}
       {markupHelpOpen && <TranslationMarkupHelpModal onClose={() => setMarkupHelpOpen(false)} />}
       {keywordModalOpen && (

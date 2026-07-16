@@ -168,9 +168,24 @@ h1 { font-family: 'Libre Caslon Text', 'Noto Serif JP', serif; font-size: clamp(
 .translation-keyword-button:hover .translation-keyword-tooltip, .translation-keyword-button:focus-visible .translation-keyword-tooltip { opacity: 1; visibility: visible; }
 
 .recent { margin-top: 72px; }
+.registered-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 22px; }
+.registered-heading .section-title { margin-bottom: 0; }
 .section-title { margin-bottom: 22px; }
 .section-title h2 { font: 400 25px 'Noto Serif JP', serif; margin: 0; }
+.translation-search { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+.translation-search-field input { width: min(260px, 24vw); min-width: 150px; border: 1px solid #c8c4b9; border-radius: 3px; background: var(--paper); padding: 9px 11px; color: var(--ink); outline: 0; font: 11px 'Noto Serif JP', serif; }
+.translation-search-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px #d8624018; }
+.translation-search-target { display: flex; border: 1px solid #c8c4b9; border-radius: 4px; overflow: hidden; }
+.translation-search-target button { border: 0; background: var(--paper); padding: 8px 10px; color: var(--muted); cursor: pointer; font: 600 10px 'Noto Serif JP', serif; }
+.translation-search-target button + button { border-left: 1px solid #c8c4b9; }
+.translation-search-target button[aria-pressed='true'] { background: var(--ink); color: white; }
+.filter-button, .clear-filter-button { border: 1px solid var(--ink); border-radius: 3px; background: var(--ink); color: white; padding: 8px 11px; cursor: pointer; font: 600 10px 'Noto Serif JP', serif; }
+.filter-button:hover { border-color: var(--accent); background: var(--accent); }
+.clear-filter-button { border-color: #c8c4b9; background: transparent; color: var(--muted); }
+.clear-filter-button:hover { border-color: var(--accent); color: var(--accent); }
+.translation-filter-status { margin: -9px 0 12px; color: var(--muted); text-align: right; font-size: 10px; }
 .pair-list { border-top: 1px solid var(--line); }
+.translation-search-empty { margin: 0; padding: 34px 10px; border-bottom: 1px solid var(--line); color: var(--muted); text-align: center; font: 12px 'Noto Serif JP', serif; }
 .pair-card { display: grid; grid-template-columns: 45px 1fr 1fr 58px; gap: 28px; align-items: start; padding: 26px 8px; border-bottom: 1px solid var(--line); transition: background .18s ease; }
 .pair-card.editing { background: #efe9df; }
 .pair-card p { margin: 0; font-size: 14px; line-height: 1.8; }
@@ -307,6 +322,11 @@ footer { border-top: 1px solid var(--line); margin-top: auto; padding: 25px clam
   .pair-card { grid-template-columns: 28px 1fr 58px; gap: 14px; }
   .pair-card .pair-translation { grid-column: 2; }
   .pair-actions { grid-row: 1; grid-column: 3; }
+  .registered-heading { align-items: stretch; flex-direction: column; }
+  .translation-search { justify-content: flex-start; flex-wrap: wrap; }
+  .translation-search-field { flex: 1 1 220px; }
+  .translation-search-field input { width: 100%; }
+  .translation-filter-status { text-align: left; }
   .reader-label { padding-left: 0; gap: 25px; }
   .reader-row { grid-template-columns: 1fr; gap: 17px; padding-left: 34px; }
   footer { padding-bottom: 80px; gap: 20px; }
