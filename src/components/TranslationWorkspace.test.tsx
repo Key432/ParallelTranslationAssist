@@ -2,13 +2,22 @@ import { createRef } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { TranslationWorkspace } from './TranslationWorkspace'
 
+const informationProps = {
+  author: '',
+  sourceUrl: '',
+  originalLanguage: 'ENGLISH' as const,
+  translatedLanguage: 'JAPANESE' as const,
+}
+
 describe('TranslationWorkspace', () => {
   test('shows the project title and changes its status', () => {
     const onStatusChange = jest.fn()
     const onOpenStatistics = jest.fn()
+    const onOpenInformation = jest.fn()
     render(
       <TranslationWorkspace
         title="文学作品A"
+        {...informationProps}
         status="翻訳中"
         source="Source"
         translations={[]}
@@ -24,6 +33,7 @@ describe('TranslationWorkspace', () => {
         onUndo={jest.fn()}
         onRedo={jest.fn()}
         onOpenStatistics={onOpenStatistics}
+        onOpenInformation={onOpenInformation}
         onCaptureSelection={jest.fn()}
         onDraftChange={jest.fn()}
         onSaveTranslation={jest.fn()}
@@ -40,6 +50,10 @@ describe('TranslationWorkspace', () => {
     expect(onStatusChange).toHaveBeenCalledWith('初稿完了')
     fireEvent.click(screen.getByRole('button', { name: 'プロジェクト統計を表示' }))
     expect(onOpenStatistics).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByRole('button', { name: 'プロジェクト情報を表示' }))
+    expect(onOpenInformation).toHaveBeenCalledWith()
+    fireEvent.click(screen.getByRole('button', { name: 'タイトルを編集: 文学作品A' }))
+    expect(onOpenInformation).toHaveBeenCalledWith(true)
     expect(screen.queryByText(/原文から一文/)).not.toBeInTheDocument()
   })
 
@@ -49,6 +63,7 @@ describe('TranslationWorkspace', () => {
     const { rerender } = render(
       <TranslationWorkspace
         title="Project"
+        {...informationProps}
         status="翻訳中"
         source="Source"
         translations={[translation]}
@@ -64,6 +79,7 @@ describe('TranslationWorkspace', () => {
         onUndo={jest.fn()}
         onRedo={jest.fn()}
         onOpenStatistics={jest.fn()}
+        onOpenInformation={jest.fn()}
         onCaptureSelection={jest.fn()}
         onDraftChange={jest.fn()}
         onSaveTranslation={jest.fn()}
@@ -79,6 +95,7 @@ describe('TranslationWorkspace', () => {
     rerender(
       <TranslationWorkspace
         title="Project"
+        {...informationProps}
         status="翻訳中"
         source="Source"
         translations={[translation]}
@@ -94,6 +111,7 @@ describe('TranslationWorkspace', () => {
         onUndo={jest.fn()}
         onRedo={jest.fn()}
         onOpenStatistics={jest.fn()}
+        onOpenInformation={jest.fn()}
         onCaptureSelection={jest.fn()}
         onDraftChange={jest.fn()}
         onSaveTranslation={jest.fn()}

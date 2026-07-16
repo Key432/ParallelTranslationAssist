@@ -1,4 +1,4 @@
-import { isProjectStatus } from '../domain/projects'
+import { isProjectLanguage, isProjectStatus, normalizeProject } from '../domain/projects'
 import { buildReaderRows, sortTranslations } from '../domain/translations'
 import type { Project, Translation } from '../types'
 
@@ -31,6 +31,10 @@ function isImportedProject(value: unknown): value is Omit<Project, 'updatedAt'> 
     && typeof project.title === 'string'
     && isProjectStatus(project.status)
     && typeof project.source === 'string'
+    && (project.author === undefined || typeof project.author === 'string')
+    && (project.sourceUrl === undefined || typeof project.sourceUrl === 'string')
+    && (project.originalLanguage === undefined || isProjectLanguage(project.originalLanguage))
+    && (project.translatedLanguage === undefined || isProjectLanguage(project.translatedLanguage))
     && Array.isArray(project.translations)
     && project.translations.every(isTranslation)
     && project.translations.every((translation) => translation.end <= (project.source as string).length)
@@ -60,8 +64,10 @@ export function parseProjectFile(contents: string): Project {
     throw new Error('対応していない、または破損したプロジェクトファイルです。')
   }
   const project = file.project
+  const normalized = normalizeProject(project)
+  if (!normalized) throw new Error('対応していない、または破損したプロジェクトファイルです。')
   return {
-    ...project,
+    ...normalized,
     updatedAt: typeof project.updatedAt === 'string' && !Number.isNaN(Date.parse(project.updatedAt))
       ? project.updatedAt
       : typeof file.exportedAt === 'string' && !Number.isNaN(Date.parse(file.exportedAt))

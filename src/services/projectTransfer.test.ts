@@ -4,6 +4,10 @@ import type { Project } from '../types'
 const project: Project = {
   id: 'project-1',
   title: 'Alice / Chapter 1',
+  author: 'Lewis Carroll',
+  sourceUrl: 'https://example.com/alice',
+  originalLanguage: 'ENGLISH',
+  translatedLanguage: 'JAPANESE',
   status: '翻訳中',
   source: 'Hello gap world',
   translations: [
@@ -23,8 +27,15 @@ describe('project transfer', () => {
     expect(() => parseProjectFile(JSON.stringify({ format: 'other', version: 1, project }))).toThrow('対応していない')
   })
 
-  test('loads legacy project files without an updated timestamp', () => {
-    const { updatedAt: _updatedAt, ...legacyProject } = project
+  test('loads legacy project files without project information or an updated timestamp', () => {
+    const {
+      updatedAt: _updatedAt,
+      author: _author,
+      sourceUrl: _sourceUrl,
+      originalLanguage: _originalLanguage,
+      translatedLanguage: _translatedLanguage,
+      ...legacyProject
+    } = project
     const imported = parseProjectFile(JSON.stringify({
       format: 'parallel-translation-assist',
       version: 1,
@@ -32,6 +43,7 @@ describe('project transfer', () => {
       project: legacyProject,
     }))
     expect(imported.updatedAt).toBe('2026-07-15T12:00:00.000Z')
+    expect(imported).toMatchObject({ author: '', sourceUrl: '', originalLanguage: 'ENGLISH', translatedLanguage: 'JAPANESE' })
   })
 
   test('exports translated text in source order', () => {

@@ -1,4 +1,4 @@
-import { isProjectStatus } from './projects'
+import { isProjectLanguage, isProjectStatus } from './projects'
 import type { Project, ProjectHistory, ProjectSnapshot, Translation } from '../types'
 
 export const MAX_HISTORY_ENTRIES = 25
@@ -19,6 +19,10 @@ function cloneTranslation(translation: Translation): Translation {
 export function cloneSnapshot(snapshot: ProjectSnapshot): ProjectSnapshot {
   return {
     title: snapshot.title,
+    author: snapshot.author,
+    sourceUrl: snapshot.sourceUrl,
+    originalLanguage: snapshot.originalLanguage,
+    translatedLanguage: snapshot.translatedLanguage,
     status: snapshot.status,
     source: snapshot.source,
     translations: snapshot.translations.map(cloneTranslation),
@@ -34,7 +38,13 @@ export function restoreProject(projectId: string, snapshot: ProjectSnapshot, upd
 }
 
 export function projectContentsEqual(left: Project | ProjectSnapshot, right: Project | ProjectSnapshot): boolean {
-  if (left.title !== right.title || left.status !== right.status || left.source !== right.source) return false
+  if (left.title !== right.title
+    || left.author !== right.author
+    || left.sourceUrl !== right.sourceUrl
+    || left.originalLanguage !== right.originalLanguage
+    || left.translatedLanguage !== right.translatedLanguage
+    || left.status !== right.status
+    || left.source !== right.source) return false
   if (left.translations.length !== right.translations.length) return false
   return left.translations.every((translation, index) => {
     const other = right.translations[index]
@@ -108,9 +118,17 @@ function normalizeSnapshot(value: unknown): ProjectSnapshot | null {
   if (typeof snapshot.title !== 'string'
     || !isProjectStatus(snapshot.status)
     || typeof snapshot.source !== 'string'
+    || (snapshot.originalLanguage !== undefined && !isProjectLanguage(snapshot.originalLanguage))
+    || (snapshot.translatedLanguage !== undefined && !isProjectLanguage(snapshot.translatedLanguage))
     || !Array.isArray(snapshot.translations)
     || !snapshot.translations.every(isTranslation)) return null
-  return cloneSnapshot(snapshot as ProjectSnapshot)
+  return cloneSnapshot({
+    ...(snapshot as ProjectSnapshot),
+    author: typeof snapshot.author === 'string' ? snapshot.author : '',
+    sourceUrl: typeof snapshot.sourceUrl === 'string' ? snapshot.sourceUrl : '',
+    originalLanguage: snapshot.originalLanguage === undefined ? 'ENGLISH' : snapshot.originalLanguage,
+    translatedLanguage: snapshot.translatedLanguage === undefined ? 'JAPANESE' : snapshot.translatedLanguage,
+  })
 }
 
 export function normalizeProjectHistory(value: unknown): ProjectHistory {

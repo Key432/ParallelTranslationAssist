@@ -7,8 +7,16 @@ import type { ProjectHistory, WorkspaceState } from './types'
 
 type WorkspaceFixture = Omit<WorkspaceState, 'histories'> & { histories?: Record<string, ProjectHistory> }
 
+const defaultProjectInformation = {
+  author: '',
+  sourceUrl: '',
+  originalLanguage: 'ENGLISH' as const,
+  translatedLanguage: 'JAPANESE' as const,
+}
+
 const defaultWorkspace: WorkspaceFixture = {
   projects: [{
+    ...defaultProjectInformation,
     id: 'project-1',
     title: 'Project',
     status: '翻訳中',
@@ -66,6 +74,45 @@ describe('App translation editing', () => {
     expect(screen.queryByRole('dialog', { name: '統計' })).not.toBeInTheDocument()
   })
 
+  test('creates a new project immediately with the default title', async () => {
+    await renderApp()
+    fireEvent.click(screen.getByRole('button', { name: '新しいプロジェクトを作成' }))
+
+    expect(screen.getByRole('heading', { name: 'New Project' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('新しいプロジェクト名')).not.toBeInTheDocument()
+  })
+
+  test('updates project information across the workspace, sidebar, and reader', async () => {
+    await renderApp()
+    fireEvent.click(screen.getByRole('button', { name: 'プロジェクト情報を表示' }))
+    const dialog = screen.getByRole('dialog', { name: 'プロジェクト情報' })
+    fireEvent.change(within(dialog).getByLabelText(/Title/), { target: { value: 'Updated title' } })
+    fireEvent.change(within(dialog).getByLabelText(/Author/), { target: { value: 'Sample Author' } })
+    fireEvent.change(within(dialog).getByLabelText(/Source/), { target: { value: 'https://example.com/source' } })
+    fireEvent.change(within(dialog).getByLabelText('Original Language'), { target: { value: 'FRENCH' } })
+    fireEvent.change(within(dialog).getByLabelText('Translated Language'), { target: { value: 'KOREAN' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: '情報を保存' }))
+
+    expect(screen.getByRole('heading', { name: 'Updated title' })).toBeInTheDocument()
+    expect(screen.getByText('Sample Author', { exact: false })).toHaveTextContent('by Sample Author')
+    expect(screen.getByRole('link', { name: '🔗 Source' })).toHaveAttribute('href', 'https://example.com/source')
+    expect(screen.getByRole('link', { name: '🔗 Source' })).toHaveAttribute('target', '_blank')
+    expect(screen.getAllByText('Updated title')).toHaveLength(2)
+    expect(screen.getByText('FRENCH', { selector: '.lang' })).toBeInTheDocument()
+    expect(screen.getByText('KOREAN', { selector: '.lang' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '閲覧' }))
+    expect(screen.getByText('ORIGINAL · FRENCH')).toBeInTheDocument()
+    expect(screen.getByText('TRANSLATION · KOREAN')).toBeInTheDocument()
+  })
+
+  test('opens title editing with the title field focused', async () => {
+    await renderApp()
+    fireEvent.click(screen.getByRole('button', { name: 'タイトルを編集: Project' }))
+    expect(screen.getByRole('dialog', { name: 'プロジェクト情報' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/Title/)).toHaveFocus()
+  })
+
   test('automatically edits a translation when the selected range matches exactly', async () => {
     await renderApp()
     const sourceText = screen.getByRole('textbox', { name: '翻訳する原文' }) as HTMLTextAreaElement
@@ -98,6 +145,7 @@ describe('App translation editing', () => {
   test('keeps and merges registered translation text for a new overlapping range', async () => {
     await renderApp({
       projects: [{
+        ...defaultProjectInformation,
         id: 'project-1', title: 'Project', status: '翻訳中', source: 'Hello world',
         translations: [
           { id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
@@ -120,6 +168,7 @@ describe('App translation editing', () => {
   test('updates the source range in edit mode and discards another overlapping translation after confirmation', async () => {
     await renderApp({
       projects: [{
+        ...defaultProjectInformation,
         id: 'project-1',
         title: 'Project',
         status: '翻訳中',
@@ -157,6 +206,7 @@ describe('App translation editing', () => {
   test('merges other registered text into the current translation while editing', async () => {
     await renderApp({
       projects: [{
+        ...defaultProjectInformation,
         id: 'project-1', title: 'Project', status: '翻訳中', source: 'Hello world',
         translations: [
           { id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
@@ -205,6 +255,7 @@ describe('App translation editing', () => {
   test('discards only split translations while preserving unaffected translations', async () => {
     await renderApp({
       projects: [{
+        ...defaultProjectInformation,
         id: 'project-1', title: 'Project', status: '翻訳中', source: 'Hello world',
         translations: [
           { id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' },
@@ -273,6 +324,7 @@ describe('App translation editing', () => {
   test('imports a complete project after overwrite confirmation', async () => {
     await renderApp()
     const importedProject = {
+      ...defaultProjectInformation,
       id: 'imported', title: 'Imported project', status: '完了' as const, source: 'Imported source',
       translations: [{ id: 'imported-translation', start: 0, end: 8, source: 'Imported', translated: 'インポート済み' }],
       updatedAt: '2026-07-16T01:00:00.000Z',

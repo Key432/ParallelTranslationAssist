@@ -6,25 +6,15 @@ type Props = {
   open: boolean
   sidebarRef: Ref<HTMLElement>
   activeProjectId: string | null
-  creating: boolean
-  onCreatingChange: (creating: boolean) => void
   onSelect: (id: string) => void
-  onAdd: (title: string) => void
+  onAdd: () => void
   onRename: (id: string, title: string) => void
   onDelete: (project: Project) => void
 }
 
-export function ProjectSidebar({ projects, open, sidebarRef, activeProjectId, creating, onCreatingChange, onSelect, onAdd, onRename, onDelete }: Props) {
-  const [newTitle, setNewTitle] = useState('')
+export function ProjectSidebar({ projects, open, sidebarRef, activeProjectId, onSelect, onAdd, onRename, onDelete }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
-
-  const submitProject = () => {
-    const title = newTitle.trim()
-    if (!title) return
-    onAdd(title)
-    setNewTitle('')
-  }
 
   const submitRename = () => {
     const title = editingTitle.trim()
@@ -44,19 +34,8 @@ export function ProjectSidebar({ projects, open, sidebarRef, activeProjectId, cr
     >
       <div className="sidebar-heading">
         <div><p className="eyebrow">YOUR WORKSPACE</p><h2>プロジェクト</h2></div>
-        <button className="add-project" onClick={() => onCreatingChange(true)} aria-label="新しいプロジェクトを作成">＋</button>
+        <button className="add-project" onClick={onAdd} aria-label="新しいプロジェクトを作成">＋</button>
       </div>
-
-      {creating && (
-        <form className="project-form" onSubmit={(event) => { event.preventDefault(); submitProject() }}>
-          <label htmlFor="new-project-title">新しいプロジェクト名</label>
-          <input id="new-project-title" value={newTitle} onChange={(event) => setNewTitle(event.target.value)} placeholder="タイトルを入力" autoFocus maxLength={80} />
-          <div>
-            <button type="button" onClick={() => { onCreatingChange(false); setNewTitle('') }}>キャンセル</button>
-            <button type="submit" disabled={!newTitle.trim()}>作成</button>
-          </div>
-        </form>
-      )}
 
       <div className="project-list">
         {projects.map((project) => (

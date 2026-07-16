@@ -3,6 +3,7 @@ import { AppHeader } from './components/AppHeader'
 import { ConfirmationModal } from './components/ConfirmationModal'
 import { EmptyProjects } from './components/EmptyProjects'
 import { ProjectSidebar } from './components/ProjectSidebar'
+import { ProjectInformationModal } from './components/ProjectInformationModal'
 import { ProjectStatisticsModal } from './components/ProjectStatisticsModal'
 import { Reader } from './components/Reader'
 import { TranslationWorkspace } from './components/TranslationWorkspace'
@@ -10,7 +11,7 @@ import { calculateTextEdit, findExactTranslation, findOverlappingTranslations, f
 import type { TextEdit } from './domain/translations'
 import { useWorkspace } from './hooks/useWorkspace'
 import { useOutsideClick } from './hooks/useOutsideClick'
-import type { Project, Selection, ViewMode } from './types'
+import type { Project, ProjectInformation, Selection, ViewMode } from './types'
 import { downloadFile } from './services/browserFiles'
 import { buildParallelText, buildTranslationsText, parseProjectFile, safeFileName, serializeProject } from './services/projectTransfer'
 
@@ -39,8 +40,8 @@ function App() {
   const [pendingProjectImport, setPendingProjectImport] = useState<Project | null>(null)
   const [view, setView] = useState<ViewMode>('edit')
   const [notice, setNotice] = useState('')
-  const [creating, setCreating] = useState(false)
   const [statisticsOpen, setStatisticsOpen] = useState(false)
+  const [informationMode, setInformationMode] = useState<'default' | 'title' | null>(null)
   const sourceRef = useRef<HTMLTextAreaElement>(null)
   const translationRef = useRef<HTMLTextAreaElement>(null)
   const sidebarRef = useRef<HTMLElement>(null)
@@ -85,6 +86,7 @@ function App() {
     setPendingTextImport(null)
     setPendingProjectImport(null)
     setStatisticsOpen(false)
+    setInformationMode(null)
   }, [workspace.activeProjectId, endSourceHistoryGroup])
 
   useEffect(() => () => {
@@ -103,11 +105,16 @@ function App() {
     if (window.innerWidth <= 800) setSidebarOpen(false)
   }
 
-  const addProject = (title: string) => {
-    workspace.addProject(title)
-    setCreating(false)
+  const addProject = () => {
+    workspace.addProject('New Project')
     setView('edit')
     setNotice('プロジェクトを作成しました')
+  }
+
+  const saveProjectInformation = (information: ProjectInformation) => {
+    workspace.updateActiveProject((project) => ({ ...project, ...information }))
+    setInformationMode(null)
+    setNotice('プロジェクト情報を更新しました')
   }
 
   const renameProject = (id: string, title: string) => {
@@ -335,6 +342,8 @@ function App() {
     setPendingSourceUpdate(null)
     setPendingTextImport(null)
     setPendingProjectImport(null)
+    setStatisticsOpen(false)
+    setInformationMode(null)
     approvedSourceKeepIds.current.clear()
   }
 
@@ -434,8 +443,6 @@ function App() {
           open={sidebarOpen}
           sidebarRef={sidebarRef}
           activeProjectId={workspace.activeProjectId}
-          creating={creating}
-          onCreatingChange={setCreating}
           onSelect={selectProject}
           onAdd={addProject}
           onRename={renameProject}
@@ -443,10 +450,14 @@ function App() {
         />
         <main id="top">
           {!workspace.activeProject ? (
-            <EmptyProjects onCreate={() => { setSidebarOpen(true); setCreating(true) }} />
+            <EmptyProjects onCreate={addProject} />
           ) : view === 'edit' ? (
             <TranslationWorkspace
               title={workspace.activeProject.title}
+              author={workspace.activeProject.author}
+              sourceUrl={workspace.activeProject.sourceUrl}
+              originalLanguage={workspace.activeProject.originalLanguage}
+              translatedLanguage={workspace.activeProject.translatedLanguage}
               status={workspace.activeProject.status}
               source={source}
               translations={sortedTranslations}
@@ -462,7 +473,8 @@ function App() {
               canRedo={workspace.canRedo}
               onUndo={undoChange}
               onRedo={redoChange}
-              onOpenStatistics={() => setStatisticsOpen(true)}
+              onOpenStatistics={() => { setInformationMode(null); setStatisticsOpen(true) }}
+              onOpenInformation={(focusTitle = false) => { setStatisticsOpen(false); setInformationMode(focusTitle ? 'title' : 'default') }}
               onCaptureSelection={captureSelection}
               onDraftChange={setDraft}
               onSaveTranslation={saveTranslation}
@@ -481,7 +493,14 @@ function App() {
               }}
             />
           ) : (
-            <Reader title={workspace.activeProject.title} source={source} translations={sortedTranslations} onEdit={() => setView('edit')} />
+            <Reader
+              title={workspace.activeProject.title}
+              source={source}
+              translations={sortedTranslations}
+              originalLanguage={workspace.activeProject.originalLanguage}
+              translatedLanguage={workspace.activeProject.translatedLanguage}
+              onEdit={() => setView('edit')}
+            />
           )}
         </main>
       </div>
@@ -518,7 +537,7 @@ function App() {
       {pendingProjectImport && (
         <ConfirmationModal
           title="現在のプロジェクトを上書きしますか？"
-          description="インポートすると、現在のタイトル、ステータス、原文、登録済みの対訳はすべてプロジェクトファイルの内容に置き換わります。この操作は取り消せません。"
+          description="インポートすると、現在のタイトル、著者、出典URL、言語、ステータス、原文、登録済みの対訳はすべてプロジェクトファイルの内容に置き換わります。実行後は「戻す」で変更前の状態を復元できます。"
           onCancel={() => setPendingProjectImport(null)}
           onConfirm={() => applyProjectImport(pendingProjectImport)}
           confirmLabel="続ける"
@@ -526,6 +545,14 @@ function App() {
       )}
       {statisticsOpen && workspace.activeProject && (
         <ProjectStatisticsModal project={workspace.activeProject} onClose={() => setStatisticsOpen(false)} />
+      )}
+      {informationMode && workspace.activeProject && (
+        <ProjectInformationModal
+          project={workspace.activeProject}
+          focusTitle={informationMode === 'title'}
+          onClose={() => setInformationMode(null)}
+          onSave={saveProjectInformation}
+        />
       )}
       {notice && <div className="toast" role="status">{notice}</div>}
     </div>

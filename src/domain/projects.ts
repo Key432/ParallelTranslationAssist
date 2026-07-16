@@ -1,13 +1,43 @@
-import type { Project, ProjectStatus } from '../types'
+import type { Project, ProjectLanguage, ProjectStatus } from '../types'
 
 export const PROJECT_STATUSES = ['未着手', '翻訳中', '初稿完了', '修正中', '完了', '保留'] as const satisfies readonly ProjectStatus[]
+
+export const PROJECT_LANGUAGES = [
+  { value: 'ENGLISH', flag: '🇬🇧', locale: 'en' },
+  { value: 'JAPANESE', flag: '🇯🇵', locale: 'ja' },
+  { value: 'DEUTSCH', flag: '🇩🇪', locale: 'de' },
+  { value: 'RUSSIAN', flag: '🇷🇺', locale: 'ru' },
+  { value: 'FRENCH', flag: '🇫🇷', locale: 'fr' },
+  { value: 'GREEK', flag: '🇬🇷', locale: 'el' },
+  { value: 'CHINESE', flag: '🇨🇳', locale: 'zh' },
+  { value: 'KOREAN', flag: '🇰🇷', locale: 'ko' },
+] as const satisfies readonly { value: ProjectLanguage; flag: string; locale: string }[]
 
 export function isProjectStatus(value: unknown): value is ProjectStatus {
   return PROJECT_STATUSES.some((status) => status === value)
 }
 
+export function isProjectLanguage(value: unknown): value is ProjectLanguage {
+  return PROJECT_LANGUAGES.some((language) => language.value === value)
+}
+
+export function projectLanguageLocale(language: ProjectLanguage): string {
+  return PROJECT_LANGUAGES.find((option) => option.value === language)?.locale ?? 'en'
+}
+
 export function createProject(title: string, source = '', updatedAt = new Date().toISOString()): Project {
-  return { id: crypto.randomUUID(), title, status: '未着手', source, translations: [], updatedAt }
+  return {
+    id: crypto.randomUUID(),
+    title,
+    author: '',
+    sourceUrl: '',
+    originalLanguage: 'ENGLISH',
+    translatedLanguage: 'JAPANESE',
+    status: '未着手',
+    source,
+    translations: [],
+    updatedAt,
+  }
 }
 
 function normalizeUpdatedAt(value: unknown): string {
@@ -27,6 +57,10 @@ export function normalizeProject(value: unknown): Project | null {
   return {
     id: project.id as string,
     title: project.title as string,
+    author: typeof project.author === 'string' ? project.author : '',
+    sourceUrl: typeof project.sourceUrl === 'string' ? project.sourceUrl : '',
+    originalLanguage: isProjectLanguage(project.originalLanguage) ? project.originalLanguage : 'ENGLISH',
+    translatedLanguage: isProjectLanguage(project.translatedLanguage) ? project.translatedLanguage : 'JAPANESE',
     status: isProjectStatus(project.status) ? project.status : '未着手',
     source: project.source as string,
     translations: project.translations as Project['translations'],

@@ -5,6 +5,10 @@ function project(title: string, id = 'project-1'): Project {
   return {
     id,
     title,
+    author: '',
+    sourceUrl: '',
+    originalLanguage: 'ENGLISH',
+    translatedLanguage: 'JAPANESE',
     status: '未着手',
     source: 'Hello',
     translations: [{ id: 'translation-1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' }],
@@ -17,6 +21,19 @@ describe('project history', () => {
     const result = recordProjectChange(project('A'), project('B'), emptyProjectHistory())
     expect(result.history.past).toEqual([snapshotProject(project('A'))])
     expect(result.project.title).toBe('B')
+  })
+
+  test('records project information changes and restores legacy history defaults', () => {
+    const current = project('A')
+    const changed = recordProjectChange(current, { ...current, author: 'Author', originalLanguage: 'FRENCH' }, emptyProjectHistory())
+    expect(changed.history.past).toHaveLength(1)
+    expect(undoProject(changed.project, changed.history)?.project).toMatchObject({ author: '', originalLanguage: 'ENGLISH' })
+
+    const legacy = normalizeProjectHistory({
+      past: [{ title: 'Legacy', status: '未着手', source: '', translations: [] }],
+      future: [],
+    })
+    expect(legacy.past[0]).toMatchObject({ author: '', sourceUrl: '', originalLanguage: 'ENGLISH', translatedLanguage: 'JAPANESE' })
   })
 
   test('undoes and redoes a project change', () => {

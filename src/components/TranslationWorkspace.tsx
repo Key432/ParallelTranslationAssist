@@ -1,11 +1,15 @@
 import type { RefObject } from 'react'
-import { PROJECT_STATUSES } from '../domain/projects'
-import type { ProjectStatus, Selection, Translation } from '../types'
+import { PROJECT_STATUSES, projectLanguageLocale } from '../domain/projects'
+import type { ProjectLanguage, ProjectStatus, Selection, Translation } from '../types'
 import { HistoryControls } from './HistoryControls'
 import { SourceEditor } from './SourceEditor'
 
 type Props = {
   title: string
+  author: string
+  sourceUrl: string
+  originalLanguage: ProjectLanguage
+  translatedLanguage: ProjectLanguage
   status: ProjectStatus
   source: string
   translations: Translation[]
@@ -22,6 +26,7 @@ type Props = {
   onUndo: () => void
   onRedo: () => void
   onOpenStatistics: () => void
+  onOpenInformation: (focusTitle?: boolean) => void
   onCaptureSelection: () => void
   onDraftChange: (draft: string) => void
   onSaveTranslation: () => void
@@ -32,6 +37,10 @@ type Props = {
 
 export function TranslationWorkspace({
   title,
+  author,
+  sourceUrl,
+  originalLanguage,
+  translatedLanguage,
   status,
   source,
   translations,
@@ -48,6 +57,7 @@ export function TranslationWorkspace({
   onUndo,
   onRedo,
   onOpenStatistics,
+  onOpenInformation,
   onCaptureSelection,
   onDraftChange,
   onSaveTranslation,
@@ -69,18 +79,30 @@ export function TranslationWorkspace({
             <HistoryControls canUndo={canUndo} canRedo={canRedo} onUndo={onUndo} onRedo={onRedo} />
           </div>
           <p className="eyebrow">TRANSLATION WORKSPACE</p>
-          <h1>{title}</h1>
+          <h1><button className="editable-project-title" onClick={() => onOpenInformation(true)} aria-label={`タイトルを編集: ${title}`}>{title}</button></h1>
+          {(author || sourceUrl) && (
+            <div className="project-attribution">
+              {author && <span>by {author}</span>}
+              {sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer">🔗 Source</a>}
+            </div>
+          )}
         </div>
-        <button className="statistics-button" onClick={onOpenStatistics} aria-label="プロジェクト統計を表示">
-          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 17V9h3v8H3Zm5 0V3h3v14H8Zm5 0v-5h3v5h-3Z" /></svg>
-          <span>統計</span>
-        </button>
+        <div className="intro-actions">
+          <button className="statistics-button" onClick={onOpenStatistics} aria-label="プロジェクト統計を表示">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 17V9h3v8H3Zm5 0V3h3v14H8Zm5 0v-5h3v5h-3Z" /></svg>
+            <span>統計</span>
+          </button>
+          <button className="statistics-button" onClick={() => onOpenInformation()} aria-label="プロジェクト情報を表示">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 3.2a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3ZM8.8 9h2.4v6H8.8V9Z" /></svg>
+            <span>情報</span>
+          </button>
+        </div>
       </div>
 
       <div className="editor-grid">
         <article className="panel source-panel">
           <div className="panel-header">
-            <div><span className="step">01</span><h2>原文</h2><span className="lang">ENGLISH</span></div>
+            <div><span className="step">01</span><h2>原文</h2><span className="lang">{originalLanguage}</span></div>
             <span className="count">{source.length.toLocaleString()} 字</span>
           </div>
           <SourceEditor source={source} translations={translations} sourceRef={sourceRef} onSourceChange={onSourceChange} onBlur={onSourceBlur} />
@@ -92,7 +114,7 @@ export function TranslationWorkspace({
 
         <article className={`panel translation-panel ${selection ? 'ready' : ''}`}>
           <div className="panel-header">
-            <div><span className="step">02</span><h2>訳文</h2><span className="lang">JAPANESE</span></div>
+            <div><span className="step">02</span><h2>訳文</h2><span className="lang">{translatedLanguage}</span></div>
             <span className="count">{translations.length} 件</span>
           </div>
           {selection ? (
@@ -130,8 +152,8 @@ export function TranslationWorkspace({
             {translations.map((item, index) => (
               <article className={`pair-card ${editingTranslationId === item.id ? 'editing' : ''}`} key={item.id}>
                 <span className="pair-number">{String(index + 1).padStart(2, '0')}</span>
-                <p lang="en">{item.source}</p>
-                <p lang="ja">{item.translated}</p>
+                <p className="pair-source" lang={projectLanguageLocale(originalLanguage)}>{item.source}</p>
+                <p className="pair-translation" lang={projectLanguageLocale(translatedLanguage)}>{item.translated}</p>
                 <div className="pair-actions">
                   <button aria-label="この対訳を編集" onClick={() => onEditTranslation(item.id)}>✎</button>
                   <button aria-label="この対訳を削除" onClick={() => onDeleteTranslation(item.id)}>×</button>

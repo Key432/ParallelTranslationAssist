@@ -5,6 +5,10 @@ import type { Project } from '../types'
 const project: Project = {
   id: 'project-1',
   title: 'Sample',
+  author: '',
+  sourceUrl: '',
+  originalLanguage: 'ENGLISH',
+  translatedLanguage: 'JAPANESE',
   status: '翻訳中',
   source: 'Hello brave world',
   translations: [{ id: 'one', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' }],
