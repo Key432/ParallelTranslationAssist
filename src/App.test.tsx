@@ -123,6 +123,7 @@ describe('App translation editing', () => {
 
     expect(screen.getByRole('textbox', { name: '訳文' })).toHaveValue('こんにちは')
     expect(screen.getByText('編集中の原文')).toBeInTheDocument()
+    expect(document.querySelector('.selected-source-range')).toHaveTextContent('Hello')
   })
 
   test('confirms before discarding a partially overlapping translation', async () => {

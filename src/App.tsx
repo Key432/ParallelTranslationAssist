@@ -462,6 +462,7 @@ function App() {
               source={source}
               translations={sortedTranslations}
               selection={selection}
+              highlightedSelection={pendingDiscard?.selection}
               editingTranslationId={editingTranslationId}
               draft={draft}
               sourceRef={sourceRef}

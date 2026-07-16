@@ -1,4 +1,4 @@
-import type { Translation } from '../types'
+import type { Selection, Translation } from '../types'
 
 export type ReaderRow = {
   id: string
@@ -11,6 +11,7 @@ export type SourceSegment = {
   id: string
   text: string
   translated: boolean
+  selected: boolean
 }
 
 export type TextEdit = {
@@ -101,20 +102,29 @@ export function reconcileTranslationsAfterEdit(
     })
 }
 
-export function buildSourceSegments(source: string, translations: Translation[]): SourceSegment[] {
-  const segments: SourceSegment[] = []
-  let cursor = 0
-
-  sortTranslations(translations).forEach((translation) => {
-    const start = Math.max(cursor, Math.min(translation.start, source.length))
-    const end = Math.max(start, Math.min(translation.end, source.length))
-    if (start > cursor) segments.push({ id: `plain-${translation.id}`, text: source.slice(cursor, start), translated: false })
-    if (end > start) segments.push({ id: translation.id, text: source.slice(start, end), translated: true })
-    cursor = end
+export function buildSourceSegments(source: string, translations: Translation[], selection?: Selection | null): SourceSegment[] {
+  const clamp = (position: number) => Math.max(0, Math.min(position, source.length))
+  const boundaries = new Set([0, source.length])
+  translations.forEach((translation) => {
+    boundaries.add(clamp(translation.start))
+    boundaries.add(clamp(translation.end))
   })
+  if (selection) {
+    boundaries.add(clamp(selection.start))
+    boundaries.add(clamp(selection.end))
+  }
 
-  if (cursor < source.length) segments.push({ id: 'plain-last', text: source.slice(cursor), translated: false })
-  return segments
+  const positions = [...boundaries].sort((left, right) => left - right)
+  return positions.slice(0, -1).flatMap((start, index) => {
+    const end = positions[index + 1]
+    if (end <= start) return []
+    return [{
+      id: `source-${start}-${end}`,
+      text: source.slice(start, end),
+      translated: translations.some((translation) => translation.start < end && translation.end > start),
+      selected: Boolean(selection && selection.start < end && selection.end > start),
+    }]
+  })
 }
 
 export function buildReaderRows(source: string, translations: Translation[]): ReaderRow[] {

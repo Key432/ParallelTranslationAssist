@@ -1,18 +1,28 @@
-import { useMemo, useRef, type RefObject, type UIEvent } from 'react'
+import { useEffect, useMemo, useRef, type RefObject, type UIEvent } from 'react'
 import { buildSourceSegments } from '../domain/translations'
-import type { Translation } from '../types'
+import type { Selection, Translation } from '../types'
 
 type Props = {
   source: string
   translations: Translation[]
+  selection?: Selection | null
   sourceRef: RefObject<HTMLTextAreaElement | null>
   onSourceChange: (source: string) => void
   onBlur?: () => void
 }
 
-export function SourceEditor({ source, translations, sourceRef, onSourceChange, onBlur }: Props) {
+export function SourceEditor({ source, translations, selection = null, sourceRef, onSourceChange, onBlur }: Props) {
   const highlightRef = useRef<HTMLDivElement>(null)
-  const segments = useMemo(() => buildSourceSegments(source, translations), [source, translations])
+  const segments = useMemo(() => buildSourceSegments(source, translations, selection), [source, translations, selection])
+
+  useEffect(() => {
+    if (!selection || !highlightRef.current || !sourceRef.current) return
+    const selectedRange = highlightRef.current.querySelector<HTMLElement>('.selected-source-range')
+    if (!selectedRange) return
+    const targetScrollTop = Math.max(0, selectedRange.offsetTop - (highlightRef.current.clientHeight / 2))
+    highlightRef.current.scrollTop = targetScrollTop
+    sourceRef.current.scrollTop = targetScrollTop
+  }, [selection, sourceRef])
 
   const syncScroll = (event: UIEvent<HTMLTextAreaElement>) => {
     if (!highlightRef.current) return
@@ -25,7 +35,10 @@ export function SourceEditor({ source, translations, sourceRef, onSourceChange, 
       <div className="source-highlight" ref={highlightRef} aria-hidden="true">
         <div className="source-highlight-content">
           {segments.map((segment) => (
-            <span className={segment.translated ? 'translated-source' : undefined} key={segment.id}>{segment.text}</span>
+            <span
+              className={[segment.translated ? 'translated-source' : '', segment.selected ? 'selected-source-range' : ''].filter(Boolean).join(' ') || undefined}
+              key={segment.id}
+            >{segment.text}</span>
           ))}
           {source.endsWith('\n') ? '\n' : null}
         </div>

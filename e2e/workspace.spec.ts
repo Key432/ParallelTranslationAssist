@@ -81,6 +81,11 @@ test('registers a translation from a source selection and updates progress', asy
   })
 
   await page.getByRole('button', { name: '選択範囲を翻訳 →' }).click()
+  await expect(page.locator('.selected-source-range')).toHaveText('Hello')
+  await expect.poll(() => page.locator('.selected-source-range').evaluate((element) => {
+    const style = getComputedStyle(element)
+    return `${style.outlineWidth} ${style.outlineColor}`
+  })).toBe('1px rgb(228, 195, 172)')
   await page.getByRole('textbox', { name: '訳文' }).fill('こんにちは')
   await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
 
@@ -89,6 +94,28 @@ test('registers a translation from a source selection and updates progress', asy
   const dialog = page.getByRole('dialog', { name: '統計' })
   await expect(dialog.getByLabel('翻訳済み 50%')).toBeVisible()
   await expect(dialog.getByText('未翻訳 1語')).toBeVisible()
+})
+
+test('highlights and scrolls to a registered source range when editing', async ({ page }) => {
+  const lines = Array.from({ length: 60 }, (_, index) => `Line ${index + 1}`).join('\n')
+  const sourceText = `${lines}\nTarget text`
+  const targetStart = sourceText.indexOf('Target text')
+  const source = page.getByRole('textbox', { name: '翻訳する原文' })
+  await source.fill(sourceText)
+  await source.evaluate((element: HTMLTextAreaElement, start) => {
+    element.focus()
+    element.setSelectionRange(start, start + 'Target text'.length)
+  }, targetStart)
+  await page.getByRole('button', { name: '選択範囲を翻訳 →' }).click()
+  await expect(page.locator('.selected-source-range')).toHaveText('Target text')
+  await page.getByRole('textbox', { name: '訳文' }).fill('対象')
+  await page.getByRole('button', { name: '訳文を登録 ⌘↵' }).click()
+
+  await source.evaluate((element: HTMLTextAreaElement) => { element.scrollTop = 0 })
+  await page.getByRole('button', { name: 'この対訳を編集' }).click()
+
+  await expect(page.locator('.selected-source-range')).toHaveText('Target text')
+  await expect.poll(() => source.evaluate((element: HTMLTextAreaElement) => element.scrollTop)).toBeGreaterThan(0)
 })
 
 test('keeps undo history after reloading the browser', async ({ page }) => {

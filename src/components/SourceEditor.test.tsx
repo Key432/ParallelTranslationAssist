@@ -50,4 +50,18 @@ describe('SourceEditor', () => {
     )
     expect(container.querySelector('.source-highlight-content')?.textContent).toBe('Hello')
   })
+
+  test('draws a border marker around the active source selection', () => {
+    const { container } = render(
+      <SourceEditor
+        source="Hello world"
+        translations={[]}
+        selection={{ start: 0, end: 5, text: 'Hello' }}
+        sourceRef={createRef<HTMLTextAreaElement>()}
+        onSourceChange={jest.fn()}
+      />,
+    )
+
+    expect(container.querySelector('.selected-source-range')).toHaveTextContent('Hello')
+  })
 })

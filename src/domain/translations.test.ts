@@ -48,6 +48,19 @@ describe('translation domain', () => {
     ])
   })
 
+  test('splits source segments around the active selection', () => {
+    const segments = buildSourceSegments(
+      'First gap123 Second tail',
+      translations,
+      { start: 6, end: 20, text: 'gap123 Second ' },
+    )
+    expect(segments.filter(({ selected }) => selected).map(({ text, translated }) => [text, translated])).toEqual([
+      ['gap123 ', false],
+      ['Second', true],
+      [' ', false],
+    ])
+  })
+
   test('updates only the requested translation text', () => {
     const updated = updateTranslationText(translations, 'first', '更新した訳文')
     expect(updated.find((item) => item.id === 'first')).toEqual({ ...translations[1], translated: '更新した訳文' })

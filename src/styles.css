@@ -133,6 +133,7 @@ h1 { font-family: 'Libre Caslon Text', 'Noto Serif JP', serif; font-size: clamp(
 .source-highlight::-webkit-scrollbar-thumb, .source-highlight::-webkit-scrollbar-track { background: transparent; }
 .source-highlight-content { min-height: 100%; }
 .translated-source { color: #d7835e; }
+.selected-source-range { outline: 1px solid #e4c3ac; outline-offset: -1px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 .source-editor textarea { resize: none; outline: 0; background: transparent; color: transparent; caret-color: var(--ink); -webkit-text-fill-color: transparent; }
 .source-editor textarea::placeholder { color: #8e8e86; -webkit-text-fill-color: #8e8e86; }
 .source-editor textarea::selection { background: #e4c3ac; color: var(--ink); -webkit-text-fill-color: var(--ink); }
