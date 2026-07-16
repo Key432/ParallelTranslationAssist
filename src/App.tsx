@@ -495,6 +495,8 @@ function App() {
           ) : (
             <Reader
               title={workspace.activeProject.title}
+              author={workspace.activeProject.author}
+              sourceUrl={workspace.activeProject.sourceUrl}
               source={source}
               translations={sortedTranslations}
               originalLanguage={workspace.activeProject.originalLanguage}

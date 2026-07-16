@@ -4,7 +4,7 @@ import { Reader } from './Reader'
 describe('Reader', () => {
   test('shows the empty state and returns to editing', () => {
     const onEdit = jest.fn()
-    render(<Reader title="Project" source="Hello" translations={[]} originalLanguage="ENGLISH" translatedLanguage="JAPANESE" onEdit={onEdit} />)
+    render(<Reader title="Project" author="" sourceUrl="" source="Hello" translations={[]} originalLanguage="ENGLISH" translatedLanguage="JAPANESE" onEdit={onEdit} />)
 
     expect(screen.getByRole('heading', { name: 'まだ対訳がありません。' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /編集へ戻る/ }))
@@ -15,6 +15,8 @@ describe('Reader', () => {
     render(
       <Reader
         title="Project"
+        author="Author Name"
+        sourceUrl="https://example.com/source"
         source="Hello world"
         translations={[{ id: 't1', start: 0, end: 5, source: 'Hello', translated: 'こんにちは' }]}
         originalLanguage="FRENCH"
@@ -28,5 +30,10 @@ describe('Reader', () => {
     expect(screen.getByText('world')).toBeInTheDocument()
     expect(screen.getByText('ORIGINAL · FRENCH')).toBeInTheDocument()
     expect(screen.getByText('TRANSLATION · KOREAN')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Project' })).toBeInTheDocument()
+    expect(screen.getByText('原文と訳文')).toHaveClass('project-kicker')
+    expect(screen.getByText('by Author Name')).toHaveClass('project-author')
+    expect(screen.getByRole('link', { name: '🔗 Source' })).toHaveAttribute('href', 'https://example.com/source')
+    expect(screen.queryByRole('button', { name: 'タイトルを編集: Project' })).not.toBeInTheDocument()
   })
 })

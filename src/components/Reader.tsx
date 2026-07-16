@@ -4,6 +4,8 @@ import type { ProjectLanguage, Translation } from '../types'
 
 type Props = {
   title: string
+  author: string
+  sourceUrl: string
   source: string
   translations: Translation[]
   originalLanguage: ProjectLanguage
@@ -11,7 +13,7 @@ type Props = {
   onEdit: () => void
 }
 
-export function Reader({ title, source, translations, originalLanguage, translatedLanguage, onEdit }: Props) {
+export function Reader({ title, author, sourceUrl, source, translations, originalLanguage, translatedLanguage, onEdit }: Props) {
   if (translations.length === 0) {
     return (
       <section className="reader empty-reader">
@@ -28,7 +30,17 @@ export function Reader({ title, source, translations, originalLanguage, translat
   return (
     <section className="reader">
       <div className="reader-heading">
-        <div><p className="project-kicker">{title}</p><p className="eyebrow">PARALLEL READING</p><h1>原文と訳文</h1></div>
+        <div>
+          <p className="project-kicker">原文と訳文</p>
+          <p className="eyebrow">PARALLEL READING</p>
+          <h1>{title}</h1>
+          {(author || sourceUrl) && (
+            <div className="project-attribution">
+              {author && <span className="project-author">by {author}</span>}
+              {sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer">🔗 Source</a>}
+            </div>
+          )}
+        </div>
         <p>{translations.length} 件の訳文 · 未訳部分も原文の流れに沿って表示</p>
       </div>
       <div className="reader-table">
